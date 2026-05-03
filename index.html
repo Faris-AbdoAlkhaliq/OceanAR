@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OceanAR — Immersive Sea Experience</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
+
+    :root {
+      --deep: #020c18;
+      --ocean: #0a2540;
+      --mid: #0e4d6e;
+      --teal: #1ab3c8;
+      --foam: #a8f0f5;
+      --glow: #00ffe7;
+      --sand: #f0e8d0;
+      --text: #d8f4f7;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--deep);
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    /* ─── SPLASH SCREEN ─── */
+    #splash {
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 70%, #0a3a5a 0%, #020c18 70%);
+      transition: opacity 0.8s ease;
+    }
+
+    #splash.hidden { opacity: 0; pointer-events: none; }
+
+    .ocean-bg {
+      position: absolute; inset: 0; overflow: hidden;
+    }
+
+    .bubble {
+      position: absolute; bottom: -40px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), rgba(26,179,200,0.1));
+      border: 1px solid rgba(26,179,200,0.3);
+      animation: rise linear infinite;
+    }
+
+    @keyframes rise {
+      to { transform: translateY(-110vh) translateX(30px); opacity: 0; }
+    }
+
+    .splash-content {
+      position: relative; z-index: 2;
+      text-align: center; padding: 2rem;
+    }
+
+    .splash-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem; letter-spacing: 0.35em;
+      color: var(--teal); text-transform: uppercase;
+      margin-bottom: 1.2rem; opacity: 0.8;
+    }
+
+    .splash-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(3.5rem, 12vw, 7rem);
+      font-weight: 300; line-height: 0.95;
+      color: var(--foam);
+      text-shadow: 0 0 60px rgba(0,255,231,0.3);
+      margin-bottom: 0.3rem;
+    }
+
+    .splash-title em {
+      font-style: italic; color: var(--glow);
+      text-shadow: 0 0 40px rgba(0,255,231,0.6);
+    }
+
+    .splash-sub {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(1rem, 3vw, 1.4rem);
+      font-weight: 300; font-style: italic;
+      color: rgba(168,240,245,0.6);
+      margin-bottom: 2.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .creatures-preview {
+      display: flex; gap: 0.8rem; justify-content: center;
+      margin-bottom: 2.5rem; flex-wrap: wrap;
+    }
+
+    .creature-pill {
+      font-size: 0.6rem; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--teal);
+      border: 1px solid rgba(26,179,200,0.3);
+      padding: 0.35rem 0.75rem; border-radius: 20px;
+      background: rgba(26,179,200,0.05);
+    }
+
+    #startBtn {
+      position: relative; overflow: hidden;
+      background: transparent;
+      border: 1.5px solid var(--glow);
+      color: var(--glow);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem; letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 1rem 2.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    #startBtn::before {
+      content: ''; position: absolute; inset: 0;
+      background: var(--glow); transform: scaleX(0);
+      transform-origin: left; transition: transform 0.3s ease;
+      z-index: -1;
+    }
+
+    #startBtn:hover { color: var(--deep); }
+    #startBtn:hover::before { transform: scaleX(1); }
+
+    .ar-note {
+      margin-top: 1.2rem;
+      font-size: 0.6rem; letter-spacing: 0.1em;
+      color: rgba(168,240,245,0.35);
+      max-width: 280px; text-align: center; line-height: 1.8;
+    }
+
+    /* ─── AR CANVAS ─── */
+    #arCanvas {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      display: block;
+    }
+
+    /* ─── HUD ─── */
+    #hud {
+      position: fixed; inset: 0; pointer-events: none;
+      z-index: 10; display: none;
+    }
+
+    #hud.active { display: block; }
+
+    .hud-top {
+      position: absolute; top: 0; left: 0; right: 0;
+      padding: 1.5rem 2rem;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      background: linear-gradient(to bottom, rgba(2,12,24,0.7), transparent);
+    }
+
+    .hud-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.3rem; font-weight: 300;
+      color: var(--foam); letter-spacing: 0.1em;
+    }
+
+    .hud-logo span { color: var(--glow); font-style: italic; }
+
+    .hud-status {
+      font-size: 0.55rem; letter-spacing: 0.2em;
+      color: var(--teal); text-transform: uppercase;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--glow);
+      box-shadow: 0 0 8px var(--glow);
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hud-hint {
+      position: absolute; bottom: 2.5rem; left: 50%; transform: translateX(-50%);
+      font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+      color: rgba(168,240,245,0.5);
+      animation: fadePulse 3s ease infinite;
+      white-space: nowrap;
+    }
+
+    @keyframes fadePulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+
+    .creature-counter {
+      position: absolute; top: 5rem; right: 2rem;
+      font-size: 0.55rem; letter-spacing: 0.15em;
+      color: rgba(168,240,245,0.4); text-transform: uppercase;
+      pointer-events: none;
+    }
+
+    /* ─── INFO CARD ─── */
+    #infoCard {
+      position: fixed; bottom: -100%; left: 50%;
+      transform: translateX(-50%);
+      width: min(420px, 92vw);
+      z-index: 50; pointer-events: all;
+      transition: bottom 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #infoCard.visible { bottom: 2rem; }
+
+    .card-inner {
+      background: linear-gradient(135deg, rgba(10,37,64,0.97) 0%, rgba(2,12,24,0.97) 100%);
+      border: 1px solid rgba(26,179,200,0.25);
+      border-radius: 2px;
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,231,0.05);
+    }
+
+    .card-accent {
+      height: 3px;
+      background: linear-gradient(90deg, var(--glow), var(--teal), transparent);
+    }
+
+    .card-body { padding: 1.5rem; }
+
+    .card-header {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; margin-bottom: 1rem;
+    }
+
+    .card-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem; font-weight: 300; line-height: 1;
+      color: var(--foam);
+    }
+
+    .card-sciname {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.85rem; font-style: italic;
+      color: rgba(168,240,245,0.45); margin-top: 0.2rem;
+    }
+
+    .card-emoji {
+      font-size: 2.5rem; line-height: 1;
+      filter: drop-shadow(0 0 12px rgba(0,255,231,0.4));
+    }
+
+    .card-divider {
+      height: 1px;
+      background: linear-gradient(90deg, rgba(26,179,200,0.3), transparent);
+      margin-bottom: 1rem;
+    }
+
+    .card-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0.75rem; margin-bottom: 1rem;
+    }
+
+    .card-stat label {
+      display: block; font-size: 0.5rem;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: var(--teal); margin-bottom: 0.2rem;
+    }
+
+    .card-stat value {
+      font-size: 0.75rem; color: var(--foam);
+      letter-spacing: 0.05em; line-height: 1.4;
+    }
+
+    .card-fact {
+      background: rgba(0,255,231,0.04);
+      border-left: 2px solid var(--glow);
+      padding: 0.75rem 1rem; margin-bottom: 1.2rem;
+    }
+
+    .card-fact-label {
+      font-size: 0.5rem; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--glow);
+      margin-bottom: 0.3rem;
+    }
+
+    .card-fact-text {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 0.95rem; font-style: italic;
+      color: rgba(168,240,245,0.8); line-height: 1.5;
+    }
+
+    #closeCard {
+      width: 100%; background: transparent;
+      border: 1px solid rgba(26,179,200,0.2);
+      color: rgba(168,240,245,0.4);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.55rem; letter-spacing: 0.2em;
+      text-transform: uppercase; padding: 0.7rem;
+      cursor: pointer; transition: all 0.2s;
+    }
+
+    #closeCard:hover {
+      border-color: var(--teal);
+      color: var(--teal);
+    }
+
+    /* ─── LOADING ─── */
+    #loading {
+      position: fixed; inset: 0; z-index: 200;
+      background: var(--deep);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 1.5rem;
+      transition: opacity 0.5s ease;
+    }
+
+    #loading.hidden { opacity: 0; pointer-events: none; }
+
+    .load-fish { font-size: 2rem; animation: swim 1s ease infinite alternate; }
+    @keyframes swim { from { transform: translateX(-20px); } to { transform: translateX(20px); } }
+
+    .load-text {
+      font-size: 0.6rem; letter-spacing: 0.25em;
+      text-transform: uppercase; color: var(--teal);
+    }
+
+    .load-bar {
+      width: 160px; height: 1px;
+      background: rgba(26,179,200,0.2);
+      position: relative; overflow: hidden;
+    }
+
+    .load-bar::after {
+      content: ''; position: absolute; inset: 0;
+      background: var(--glow);
+      animation: loadFill 1.5s ease infinite;
+    }
+
+    @keyframes loadFill {
+      0% { transform: scaleX(0); transform-origin: left; }
+      50% { transform: scaleX(1); transform-origin: left; }
+      51% { transform: scaleX(1); transform-origin: right; }
+      100% { transform: scaleX(0); transform-origin: right; }
+    }
+
+    /* ─── NO AR FALLBACK ─── */
+    #noAR {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: var(--deep);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 1rem; padding: 2rem;
+      text-align: center;
+    }
+
+    #noAR .icon { font-size: 3rem; }
+    #noAR h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem; font-weight: 300; color: var(--foam);
+    }
+    #noAR p {
+      font-size: 0.65rem; line-height: 2;
+      color: rgba(168,240,245,0.5); max-width: 300px;
+      letter-spacing: 0.05em;
+    }
+    #noAR .requirements {
+      margin-top: 1rem; text-align: left;
+      border: 1px solid rgba(26,179,200,0.2);
+      padding: 1rem 1.5rem;
+    }
+    #noAR .requirements li {
+      font-size: 0.6rem; letter-spacing: 0.1em;
+      color: var(--teal); margin-bottom: 0.5rem;
+      list-style: none; padding-left: 1rem; position: relative;
+    }
+    #noAR .requirements li::before { content: '→'; position: absolute; left: 0; }
+  </style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading">
+  <div class="load-fish">🐠</div>
+  <div class="load-text">Preparing the ocean</div>
+  <div class="load-bar"></div>
+</div>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="ocean-bg" id="oceanBg"></div>
+  <div class="splash-content">
+    <p class="splash-eyebrow">CPIS360 — Immersive AR Experience</p>
+    <h1 class="splash-title">Ocean<em>AR</em></h1>
+    <p class="splash-sub">Dive into the deep without leaving your room</p>
+    <div class="creatures-preview">
+      <span class="creature-pill">🐠 Clownfish</span>
+      <span class="creature-pill">🐢 Sea Turtle</span>
+      <span class="creature-pill">🦈 Shark</span>
+      <span class="creature-pill">🪼 Jellyfish</span>
+      <span class="creature-pill">🐙 Octopus</span>
+      <span class="creature-pill">🐋 Whale</span>
+      <span class="creature-pill">🐡 Pufferfish</span>
+      <span class="creature-pill">🦑 Squid</span>
+    </div>
+    <button id="startBtn">Enter the Ocean</button>
+    <p class="ar-note">Requires a WebXR-compatible browser on Android (Chrome) or iOS (Safari 16+). Point your camera at any flat surface to begin.</p>
+  </div>
+</div>
+
+<!-- NO AR FALLBACK -->
+<div id="noAR">
+  <div class="icon">🌊</div>
+  <h2>AR Not Supported</h2>
+  <p>Your device or browser doesn't support WebXR AR sessions.</p>
+  <ul class="requirements">
+    <li>Android: Chrome 81+ with ARCore</li>
+    <li>iOS: Safari 16+ on iPhone/iPad (limited)</li>
+    <li>Enable WebXR flags if needed: chrome://flags</li>
+    <li>Ensure camera permissions are granted</li>
+  </ul>
+</div>
+
+<!-- AR CANVAS (Three.js renders here) -->
+<canvas id="arCanvas"></canvas>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <div class="hud-logo">Ocean<span>AR</span></div>
+    <div class="hud-status">
+      <div class="status-dot"></div>
+      AR Active
+    </div>
+  </div>
+  <div class="creature-counter" id="creatureCounter">8 creatures nearby</div>
+  <div class="hud-hint" id="hudHint">Tap any creature to learn more</div>
+</div>
+
+<!-- INFO CARD -->
+<div id="infoCard">
+  <div class="card-inner">
+    <div class="card-accent"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div>
+          <div class="card-name" id="cardName">Clownfish</div>
+          <div class="card-sciname" id="cardSciName">Amphiprioninae</div>
+        </div>
+        <div class="card-emoji" id="cardEmoji">🐠</div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-grid">
+        <div class="card-stat">
+          <label>Habitat</label>
+          <value id="cardHabitat">Coral Reefs</value>
+        </div>
+        <div class="card-stat">
+          <label>Diet</label>
+          <value id="cardDiet">Algae, Plankton</value>
+        </div>
+        <div class="card-stat">
+          <label>Depth Range</label>
+          <value id="cardDepth">1–15 m</value>
+        </div>
+        <div class="card-stat">
+          <label>Conservation</label>
+          <value id="cardStatus">Least Concern</value>
+        </div>
+      </div>
+      <div class="card-fact">
+        <div class="card-fact-label">✦ Did You Know</div>
+        <div class="card-fact-text" id="cardFact">All clownfish are born male and can change sex later in life.</div>
+      </div>
+      <button id="closeCard">— Dismiss —</button>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════
+//  CREATURE DATABASE
+// ═══════════════════════════════════════════════
+const CREATURES = [
+  {
+    id: 'clownfish', name: 'Clownfish', sciName: 'Amphiprioninae',
+    emoji: '🐠', color: 0xff6b35, size: 0.12,
+    habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
+    depth: '1–15 m', status: 'Least Concern',
+    fact: 'All clownfish are born male. The dominant one can switch to female!'
+  },
+  {
+    id: 'turtle', name: 'Green Sea Turtle', sciName: 'Chelonia mydas',
+    emoji: '🐢', color: 0x4a8c5c, size: 0.35,
+    habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Algae',
+    depth: '0–30 m', status: 'Endangered',
+    fact: 'They can hold their breath for up to 7 hours while sleeping underwater.'
+  },
+  {
+    id: 'shark', name: 'Hammerhead Shark', sciName: 'Sphyrna mokarran',
+    emoji: '🦈', color: 0x607d8b, size: 0.6,
+    habitat: 'Warm Coastal Waters', diet: 'Fish, Rays, Octopus',
+    depth: '0–300 m', status: 'Critically Endangered',
+    fact: 'Their wide-set eyes give them 360° vertical vision — they can see above and below simultaneously.'
+  },
+  {
+    id: 'jellyfish', name: 'Moon Jellyfish', sciName: 'Aurelia aurita',
+    emoji: '🪼', color: 0x9ecfff, size: 0.22,
+    habitat: 'Coastal & Open Ocean Worldwide', diet: 'Plankton, Larvae',
+    depth: '0–200 m', status: 'Not Evaluated',
+    fact: 'Jellyfish have no brain, heart, or bones — yet they\'ve survived for 500 million years.'
+  },
+  {
+    id: 'octopus', name: 'Common Octopus', sciName: 'Octopus vulgaris',
+    emoji: '🐙', color: 0xc2624a, size: 0.3,
+    habitat: 'Coral Reefs, Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
+    depth: '0–200 m', status: 'Least Concern',
+    fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to temperature.'
+  },
+  {
+    id: 'whale', name: 'Blue Whale', sciName: 'Balaenoptera musculus',
+    emoji: '🐋', color: 0x2a6099, size: 0.9,
+    habitat: 'Open Ocean, All Major Seas', diet: 'Krill',
+    depth: '0–500 m', status: 'Endangered',
+    fact: 'The blue whale is the largest animal ever known to exist — its heart is the size of a small car.'
+  },
+  {
+    id: 'pufferfish', name: 'Pufferfish', sciName: 'Tetraodontidae',
+    emoji: '🐡', color: 0xe8c84a, size: 0.15,
+    habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
+    depth: '1–100 m', status: 'Varies by Species',
+    fact: 'Pufferfish contain tetrodotoxin — 1200× more toxic than cyanide — yet are a Japanese delicacy.'
+  },
+  {
+    id: 'squid', name: 'Giant Squid', sciName: 'Architeuthis dux',
+    emoji: '🦑', color: 0xc44569, size: 0.5,
+    habitat: 'Deep Ocean Worldwide', diet: 'Fish, Other Squid',
+    depth: '200–1000 m', status: 'Least Concern',
+    fact: 'Giant squids have the largest eyes in the animal kingdom — up to 30cm (12 inches) in diameter.'
+  }
+];
+
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let renderer, scene, camera, xrSession;
+let creatureMeshes = [];
+let clock;
+let selectedCreature = null;
+let raycaster, mouse;
+let infoCardVisible = false;
+
+// ═══════════════════════════════════════════════
+//  INIT (runs after page loads)
+// ═══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  generateBubbles();
+  setTimeout(() => {
+    document.getElementById('loading').classList.add('hidden');
+  }, 1500);
+});
+
+function generateBubbles() {
+  const bg = document.getElementById('oceanBg');
+  for (let i = 0; i < 25; i++) {
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    const size = Math.random() * 30 + 8;
+    b.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      animation-duration:${Math.random()*8+6}s;
+      animation-delay:${Math.random()*8}s;
+      opacity:${Math.random()*0.4+0.1};
+    `;
+    bg.appendChild(b);
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  START AR
+// ═══════════════════════════════════════════════
+document.getElementById('startBtn').addEventListener('click', async () => {
+  if (!navigator.xr) {
+    showNoAR();
+    return;
+  }
+
+  const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+  if (!supported) {
+    showNoAR();
+    return;
+  }
+
+  document.getElementById('splash').classList.add('hidden');
+  initThreeJS();
+  startARSession();
+});
+
+function showNoAR() {
+  document.getElementById('splash').classList.add('hidden');
+  const el = document.getElementById('noAR');
+  el.style.display = 'flex';
+}
+
+// ═══════════════════════════════════════════════
+//  THREE.JS SETUP
+// ═══════════════════════════════════════════════
+function initThreeJS() {
+  const canvas = document.getElementById('arCanvas');
+
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,
+    alpha: true,            // transparent background for AR passthrough
+    preserveDrawingBuffer: true
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.xr.enabled = true;
+  renderer.setClearColor(0x000000, 0);  // fully transparent
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 100);
+
+  clock = new THREE.Clock();
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2();
+
+  // Ambient + directional light
+  const ambient = new THREE.AmbientLight(0x88ccff, 1.2);
+  scene.add(ambient);
+
+  const dirLight = new THREE.DirectionalLight(0x00ffe7, 0.8);
+  dirLight.position.set(1, 3, 2);
+  scene.add(dirLight);
+
+  const pointLight = new THREE.PointLight(0x1ab3c8, 1, 10);
+  pointLight.position.set(0, 2, -2);
+  scene.add(pointLight);
+
+  // Spawn creatures
+  spawnCreatures();
+
+  // Resize
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // Tap interaction
+  window.addEventListener('click', onTap);
+  window.addEventListener('touchend', (e) => {
+    const t = e.changedTouches[0];
+    mouse.x = (t.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(t.clientY / window.innerHeight) * 2 + 1;
+    checkIntersect();
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  SPAWN CREATURES (simple 3D proxy shapes)
+// ═══════════════════════════════════════════════
+function spawnCreatures() {
+  CREATURES.forEach((data, i) => {
+    // Each creature is a group with a body mesh
+    const group = new THREE.Group();
+
+    // Body geometry — varied by creature type
+    let geo;
+    if (data.id === 'jellyfish') {
+      geo = new THREE.SphereGeometry(data.size, 12, 8, 0, Math.PI*2, 0, Math.PI*0.6);
+    } else if (data.id === 'shark' || data.id === 'whale' || data.id === 'squid') {
+      geo = new THREE.ConeGeometry(data.size * 0.4, data.size * 1.5, 8);
+    } else if (data.id === 'turtle') {
+      geo = new THREE.SphereGeometry(data.size, 10, 6);
+      geo.scale(1, 0.5, 1.2);
+    } else if (data.id === 'octopus') {
+      geo = new THREE.SphereGeometry(data.size, 10, 8);
+    } else {
+      geo = new THREE.SphereGeometry(data.size * 0.7, 10, 7);
+      geo.scale(1.6, 0.8, 1);
+    }
+
+    const mat = new THREE.MeshPhongMaterial({
+      color: data.color,
+      emissive: data.color,
+      emissiveIntensity: 0.15,
+      shininess: 60,
+      transparent: true,
+      opacity: 0.92
+    });
+
+    const mesh = new THREE.Mesh(geo, mat);
+    group.add(mesh);
+
+    // Glow sphere
+    const glowGeo = new THREE.SphereGeometry(data.size * 1.4, 8, 6);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: data.color, transparent: true, opacity: 0.06, side: THREE.BackSide
+    });
+    const glow = new THREE.Mesh(glowGeo, glowMat);
+    group.add(glow);
+
+    // Spread around the camera in a sphere
+    const angle = (i / CREATURES.length) * Math.PI * 2;
+    const radius = 1.5 + Math.random() * 1.5;
+    const height = (Math.random() - 0.5) * 1.5;
+
+    group.position.set(
+      Math.cos(angle) * radius,
+      height,
+      Math.sin(angle) * radius - 2
+    );
+
+    group.rotation.y = -angle + Math.PI;
+
+    // Store metadata
+    group.userData = {
+      creatureData: data,
+      floatOffset: Math.random() * Math.PI * 2,
+      floatSpeed: 0.3 + Math.random() * 0.4,
+      rotSpeed: (Math.random() - 0.5) * 0.3,
+      baseY: group.position.y,
+      baseX: group.position.x,
+      baseZ: group.position.z,
+      originalColor: data.color,
+      mesh: mesh,
+      glowMesh: glow
+    };
+
+    scene.add(group);
+    creatureMeshes.push(group);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  WEBXR SESSION
+// ═══════════════════════════════════════════════
+async function startARSession() {
+  try {
+    xrSession = await navigator.xr.requestSession('immersive-ar', {
+      requiredFeatures: ['local'],
+      optionalFeatures: ['hit-test', 'dom-overlay'],
+      domOverlay: { root: document.body }
+    });
+
+    renderer.xr.setSession(xrSession);
+
+    xrSession.addEventListener('end', onSessionEnd);
+
+    document.getElementById('hud').classList.add('active');
+
+    renderer.setAnimationLoop(render);
+  } catch (err) {
+    console.error('XR Session failed:', err);
+    showNoAR();
+  }
+}
+
+function onSessionEnd() {
+  document.getElementById('hud').classList.remove('active');
+  renderer.setAnimationLoop(null);
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER LOOP
+// ═══════════════════════════════════════════════
+function render(timestamp, frame) {
+  const t = clock.getElapsedTime();
+
+  creatureMeshes.forEach((group) => {
+    const ud = group.userData;
+
+    // Floating animation
+    group.position.y = ud.baseY + Math.sin(t * ud.floatSpeed + ud.floatOffset) * 0.12;
+
+    // Subtle drift
+    group.position.x = ud.baseX + Math.cos(t * 0.15 + ud.floatOffset) * 0.08;
+
+    // Slow rotation / orientation
+    group.rotation.y += ud.rotSpeed * 0.01;
+
+    // Gentle body bobbing
+    if (ud.mesh) {
+      ud.mesh.rotation.z = Math.sin(t * ud.floatSpeed * 1.5 + ud.floatOffset) * 0.08;
+    }
+
+    // Glow pulse
+    if (ud.glowMesh) {
+      ud.glowMesh.material.opacity = 0.04 + Math.sin(t * 2 + ud.floatOffset) * 0.03;
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+// ═══════════════════════════════════════════════
+//  INTERACTION
+// ═══════════════════════════════════════════════
+function onTap(e) {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  checkIntersect();
+}
+
+function checkIntersect() {
+  if (infoCardVisible) return;
+
+  raycaster.setFromCamera(mouse, camera);
+  const meshes = creatureMeshes.map(g => g.children[0]).filter(Boolean);
+  const hits = raycaster.intersectObjects(meshes, false);
+
+  if (hits.length > 0) {
+    const hitMesh = hits[0].object;
+    const group = hitMesh.parent;
+    if (group && group.userData.creatureData) {
+      showInfoCard(group.userData.creatureData);
+      highlightCreature(group);
+    }
+  }
+}
+
+function highlightCreature(group) {
+  const mesh = group.userData.mesh;
+  if (!mesh) return;
+  const original = group.userData.originalColor;
+
+  mesh.material.emissiveIntensity = 0.6;
+  mesh.material.color.setHex(0xffffff);
+
+  setTimeout(() => {
+    mesh.material.emissiveIntensity = 0.15;
+    mesh.material.color.setHex(original);
+  }, 600);
+}
+
+// ═══════════════════════════════════════════════
+//  INFO CARD
+// ═══════════════════════════════════════════════
+function showInfoCard(data) {
+  document.getElementById('cardName').textContent = data.name;
+  document.getElementById('cardSciName').textContent = data.sciName;
+  document.getElementById('cardEmoji').textContent = data.emoji;
+  document.getElementById('cardHabitat').textContent = data.habitat;
+  document.getElementById('cardDiet').textContent = data.diet;
+  document.getElementById('cardDepth').textContent = data.depth;
+  document.getElementById('cardStatus').textContent = data.status;
+  document.getElementById('cardFact').textContent = data.fact;
+
+  document.getElementById('infoCard').classList.add('visible');
+  document.getElementById('hudHint').style.opacity = '0';
+  infoCardVisible = true;
+}
+
+document.getElementById('closeCard').addEventListener('click', () => {
+  document.getElementById('infoCard').classList.remove('visible');
+  document.getElementById('hudHint').style.opacity = '';
+  infoCardVisible = false;
+});
+</script>
+</body>
+</html>
