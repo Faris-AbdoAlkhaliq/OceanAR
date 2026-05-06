@@ -12,11 +12,11 @@
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
 
     :root {
-      --deep:  #020c18;
-      --teal:  #1ab3c8;
-      --foam:  #a8f0f5;
-      --glow:  #00ffe7;
-      --text:  #d8f4f7;
+      --deep: #020c18;
+      --teal: #1ab3c8;
+      --foam: #a8f0f5;
+      --glow: #00ffe7;
+      --text: #d8f4f7;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
@@ -83,38 +83,20 @@
       background:rgba(2,12,24,0.97); flex-direction:column; gap:1.2rem; padding:2rem;
     }
     #markerGuide.show { display:flex; }
-
-    .guide-title {
-      font-family:'Cormorant Garamond',serif; font-size:1.8rem;
-      font-weight:300; color:var(--foam); text-align:center;
-    }
-    .guide-sub {
-      font-size:0.55rem; letter-spacing:0.12em; color:rgba(168,240,245,0.4);
-      text-transform:uppercase; text-align:center; margin-top:-0.5rem;
-    }
-
-    /* The actual official Hiro marker image */
+    .guide-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; color:var(--foam); text-align:center; }
+    .guide-sub { font-size:0.55rem; letter-spacing:0.12em; color:rgba(168,240,245,0.4); text-transform:uppercase; text-align:center; margin-top:-0.5rem; }
     .marker-frame {
       background:#fff; padding:12px; border-radius:4px;
       box-shadow:0 0 50px rgba(0,255,231,0.25), 0 0 0 1px rgba(0,255,231,0.15);
     }
-    .marker-frame img {
-      width:200px; height:200px; display:block;
-      image-rendering:pixelated;
-    }
-
-    .marker-label {
-      font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase;
-      color:var(--teal); text-align:center;
-    }
-
+    .marker-frame img { width:200px; height:200px; display:block; image-rendering:pixelated; }
+    .marker-label { font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); text-align:center; }
     .guide-steps { text-align:left; width:100%; max-width:320px; }
     .guide-steps li {
       font-size:0.58rem; letter-spacing:0.08em; color:rgba(168,240,245,0.6);
       margin-bottom:0.55rem; list-style:none; padding-left:1.2rem; position:relative; line-height:1.6;
     }
     .guide-steps li::before { content:'→'; position:absolute; left:0; color:var(--teal); }
-
     #launchBtn {
       background:var(--glow); color:var(--deep);
       font-family:'Space Mono',monospace; font-size:0.7rem;
@@ -126,7 +108,6 @@
     /* ── HUD ── */
     #hud { position:fixed; inset:0; z-index:100; pointer-events:none; display:none; }
     #hud.active { display:block; }
-
     .hud-top {
       position:absolute; top:0; left:0; right:0; padding:1.2rem 1.5rem;
       display:flex; justify-content:space-between; align-items:center;
@@ -156,10 +137,71 @@
     @keyframes scanPulse { 0%{opacity:0.6;transform:translate(-50%,-50%) scale(0.9)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)} }
     #hud.found .scan-ring, #hud.found .hud-hint { display:none; }
 
+    /* ── CREATURE SELECTOR ── */
+    #creatureSelector {
+      position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
+      display:none; gap:0.8rem; z-index:150; pointer-events:all;
+    }
+    #creatureSelector.active { display:flex; }
+
+    .creature-btn {
+      background:rgba(2,12,24,0.85); border:1px solid rgba(26,179,200,0.3);
+      color:var(--foam); font-family:'Space Mono',monospace;
+      font-size:0.55rem; letter-spacing:0.1em; text-transform:uppercase;
+      padding:0.6rem 1rem; cursor:pointer; transition:all 0.2s;
+      backdrop-filter:blur(10px); display:flex; flex-direction:column;
+      align-items:center; gap:0.3rem;
+    }
+    .creature-btn.active {
+      border-color:var(--glow); color:var(--glow);
+      box-shadow:0 0 15px rgba(0,255,231,0.2);
+    }
+    .creature-btn span { font-size:1.4rem; }
+
+    /* ── MODEL VIEWER OVERLAY (touch-to-rotate mode) ── */
+    #modelViewer {
+      position:fixed; inset:0; z-index:300;
+      background:radial-gradient(ellipse at 50% 60%, #0a3a5a 0%, #020c18 80%);
+      display:none; flex-direction:column; align-items:center; justify-content:center;
+    }
+    #modelViewer.active { display:flex; }
+
+    .mv-header {
+      position:absolute; top:0; left:0; right:0; padding:1.2rem 1.5rem;
+      display:flex; justify-content:space-between; align-items:center;
+      background:linear-gradient(to bottom, rgba(2,12,24,0.85), transparent);
+      z-index:2;
+    }
+    .mv-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:300; color:var(--foam); }
+    .mv-close {
+      background:transparent; border:1px solid rgba(168,240,245,0.2);
+      color:rgba(168,240,245,0.5); font-family:'Space Mono',monospace;
+      font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase;
+      padding:0.5rem 1rem; cursor:pointer; transition:all 0.2s;
+    }
+    .mv-close:hover { border-color:var(--teal); color:var(--teal); }
+
+    #mvCanvas { width:100%; height:100%; display:block; touch-action:none; }
+
+    .mv-hint {
+      position:absolute; bottom:9rem; left:50%; transform:translateX(-50%);
+      font-size:0.52rem; letter-spacing:0.15em; text-transform:uppercase;
+      color:rgba(168,240,245,0.35); white-space:nowrap; pointer-events:none;
+    }
+
+    .mv-info-btn {
+      position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
+      background:var(--glow); color:var(--deep);
+      font-family:'Space Mono',monospace; font-size:0.65rem;
+      letter-spacing:0.18em; text-transform:uppercase;
+      padding:0.85rem 2rem; border:none; cursor:pointer; font-weight:700;
+      pointer-events:all;
+    }
+
     /* ── INFO CARD ── */
     #infoCard {
       position:fixed; bottom:-100%; left:50%; transform:translateX(-50%);
-      width:min(420px,93vw); z-index:200; pointer-events:all;
+      width:min(420px,93vw); z-index:400; pointer-events:all;
       transition:bottom 0.45s cubic-bezier(0.16,1,0.3,1);
     }
     #infoCard.visible { bottom:1.5rem; }
@@ -183,13 +225,13 @@
     .fact-box { background:rgba(0,255,231,0.04); border-left:2px solid var(--glow); padding:0.7rem 0.9rem; margin-bottom:1.1rem; }
     .fact-label { font-size:0.48rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--glow); margin-bottom:0.25rem; }
     .fact-text { font-family:'Cormorant Garamond',serif; font-size:0.9rem; font-style:italic; color:rgba(168,240,245,0.8); line-height:1.5; }
-    #closeBtn {
+    #closeInfoBtn {
       width:100%; background:transparent; border:1px solid rgba(26,179,200,0.2);
       color:rgba(168,240,245,0.4); font-family:'Space Mono',monospace;
       font-size:0.52rem; letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.65rem; cursor:pointer; transition:all 0.2s; pointer-events:all;
+      padding:0.65rem; cursor:pointer; transition:all 0.2s;
     }
-    #closeBtn:hover { border-color:var(--teal); color:var(--teal); }
+    #closeInfoBtn:hover { border-color:var(--teal); color:var(--teal); }
 
     /* ── LOADING ── */
     #loading {
@@ -206,9 +248,9 @@
       content:''; position:absolute; inset:0; background:var(--glow); animation:fill 1.5s ease infinite;
     }
     @keyframes fill {
-      0%  {transform:scaleX(0);transform-origin:left}
-      50% {transform:scaleX(1);transform-origin:left}
-      51% {transform:scaleX(1);transform-origin:right}
+      0%{transform:scaleX(0);transform-origin:left}
+      50%{transform:scaleX(1);transform-origin:left}
+      51%{transform:scaleX(1);transform-origin:right}
       100%{transform:scaleX(0);transform-origin:right}
     }
   </style>
@@ -230,19 +272,13 @@
     <h1 class="title">Ocean<em>AR</em></h1>
     <p class="subtitle">Dive into the deep without leaving your room</p>
     <div class="pills">
-      <span class="pill">🐠 Clownfish</span>
-      <span class="pill">🐢 Sea Turtle</span>
-      <span class="pill">🦈 Shark</span>
-      <span class="pill">🪼 Jellyfish</span>
-      <span class="pill">🐙 Octopus</span>
-      <span class="pill">🐋 Whale</span>
-      <span class="pill">🐡 Pufferfish</span>
-      <span class="pill">🦑 Squid</span>
+      <span class="pill">🐠 School of Fish</span>
+      <span class="pill">🦈 Swimming Shark</span>
     </div>
     <button id="startBtn">Enter the Ocean</button>
     <p class="note">
       Works on <span>iOS Safari</span> &amp; <span>Android Chrome</span>.<br>
-      You will need the Hiro AR marker to start.
+      Point camera at Hiro marker · Tap creature to examine &amp; learn
     </p>
   </div>
 </div>
@@ -251,23 +287,17 @@
 <div id="markerGuide">
   <h2 class="guide-title">Your AR Marker</h2>
   <p class="guide-sub">Official Hiro Marker — AR.js</p>
-
-  <!-- ✅ Real Hiro marker loaded directly from AR.js official repo -->
   <div class="marker-frame">
-    <img
-      src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png"
-      alt="Hiro AR Marker"
-      onerror="this.src='https://jeromeetienne.github.io/AR.js/data/images/hiro.png'"
-    />
+    <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Hiro AR Marker"
+      onerror="this.src='https://jeromeetienne.github.io/AR.js/data/images/hiro.png'"/>
   </div>
   <p class="marker-label">Print this or display on another screen</p>
-
   <ul class="guide-steps">
-    <li>Print this marker or open it on a second device / laptop screen</li>
+    <li>Print or show this marker on a second screen</li>
     <li>Tap "Launch AR Camera" and allow camera access</li>
-    <li>Point your camera at the black-bordered Hiro marker</li>
-    <li>All 8 sea creatures will swim into view around it</li>
-    <li>Tap any creature to learn about it</li>
+    <li>Point camera at the Hiro marker</li>
+    <li>Two sea creatures will appear — tap one to examine it in 3D</li>
+    <li>Rotate with finger drag · Pinch to zoom · Tap "Learn More" for info</li>
   </ul>
   <button id="launchBtn">Launch AR Camera</button>
 </div>
@@ -282,6 +312,27 @@
   <div class="scan-ring"></div>
   <div class="scan-ring"></div>
   <div class="hud-hint">Point camera at the Hiro marker</div>
+</div>
+
+<!-- CREATURE SELECTOR (shown when marker found) -->
+<div id="creatureSelector">
+  <button class="creature-btn active" id="btn-fish" onclick="selectCreature('fish')">
+    <span>🐠</span>School of Fish
+  </button>
+  <button class="creature-btn" id="btn-shark" onclick="selectCreature('shark')">
+    <span>🦈</span>Shark
+  </button>
+</div>
+
+<!-- MODEL VIEWER OVERLAY -->
+<div id="modelViewer">
+  <div class="mv-header">
+    <div class="mv-title" id="mvTitle">School of Fish</div>
+    <button class="mv-close" id="mvCloseBtn">✕ Close</button>
+  </div>
+  <canvas id="mvCanvas"></canvas>
+  <div class="mv-hint">Drag to rotate · Pinch to zoom</div>
+  <button class="mv-info-btn" id="mvInfoBtn">✦ Learn More</button>
 </div>
 
 <!-- INFO CARD -->
@@ -307,12 +358,12 @@
         <div class="fact-label">✦ Did You Know</div>
         <div class="fact-text" id="cFact"></div>
       </div>
-      <button id="closeBtn">— Dismiss —</button>
+      <button id="closeInfoBtn">— Dismiss —</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════ A-FRAME SCENE ═══════════════ -->
+<!-- A-FRAME SCENE -->
 <a-scene
   id="arScene"
   embedded
@@ -321,123 +372,89 @@
   vr-mode-ui="enabled:false"
   style="display:none; position:fixed; inset:0; z-index:50;"
 >
+  <a-assets>
+    <a-asset-item id="fishModel"  src="models/school_of_fish.glb"></a-asset-item>
+    <a-asset-item id="sharkModel" src="models/swimming_shark.glb"></a-asset-item>
+  </a-assets>
+
   <a-marker preset="hiro" id="hiroMarker">
+    <a-light type="ambient"     color="#88ccff" intensity="0.8"></a-light>
+    <a-light type="directional" color="#ffffff" intensity="0.6" position="1 2 1"></a-light>
+    <a-light type="point"       color="#1ab3c8" intensity="0.8" position="0 1.5 0"></a-light>
 
-    <!-- Lighting -->
-    <a-light type="ambient"    color="#88ccff" intensity="0.7"></a-light>
-    <a-light type="point" color="#1ab3c8" intensity="1.0" position="0 1.5 0"></a-light>
-    <a-light type="directional" color="#00ffe7" intensity="0.5" position="1 2 1"></a-light>
-
-    <!-- ① CLOWNFISH -->
-    <a-entity id="c-clownfish" position="0.6 0.15 0"
-      animation="property:position; to:0.6 0.32 0; dur:2200; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:8000; loop:true; easing:linear">
-      <a-sphere radius="0.08" scale="1.6 0.8 1" color="#ff6b35" metalness="0.1" roughness="0.4"></a-sphere>
-      <a-cylinder radius="0.082" height="0.018" rotation="90 0 0" position="0.02 0 0" color="white" opacity="0.85"></a-cylinder>
-      <a-sphere radius="0.033" position="-0.13 0 0" color="#ff8850"></a-sphere>
-      <a-sphere radius="0.13"  color="#ff6b35" opacity="0.07" side="back"></a-sphere>
+    <!-- School of Fish — left side -->
+    <a-entity
+      id="ar-fish"
+      gltf-model="#fishModel"
+      scale="0.008 0.008 0.008"
+      position="-0.5 0.1 0"
+      animation="property:position; to:-0.5 0.25 0; dur:2500; dir:alternate; loop:true; easing:easeInOutSine"
+      animation__rot="property:rotation; to:0 360 0; dur:12000; loop:true; easing:linear"
+      class="clickable"
+      id-ref="fish">
     </a-entity>
 
-    <!-- ② SEA TURTLE -->
-    <a-entity id="c-turtle" position="-0.65 0.15 0.25"
-      animation="property:position; to:-0.65 0.32 0.25; dur:2800; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:11000; loop:true; easing:linear">
-      <a-sphere radius="0.12" scale="1 0.52 1.2" color="#4a8c5c" roughness="0.6"></a-sphere>
-      <a-sphere radius="0.04" position="0 0.02 0.17" color="#3d7a4e"></a-sphere>
-      <a-box width="0.13" height="0.018" depth="0.065" position=" 0.15 0 0.02" rotation="0 18 0" color="#4a8c5c"></a-box>
-      <a-box width="0.13" height="0.018" depth="0.065" position="-0.15 0 0.02" rotation="0 -18 0" color="#4a8c5c"></a-box>
-      <a-sphere radius="0.19" color="#4a8c5c" opacity="0.06" side="back"></a-sphere>
+    <!-- Swimming Shark — right side -->
+    <a-entity
+      id="ar-shark"
+      gltf-model="#sharkModel"
+      scale="0.012 0.012 0.012"
+      position="0.6 0.1 0"
+      animation="property:position; to:0.6 0.28 0; dur:3000; dir:alternate; loop:true; easing:easeInOutSine"
+      animation__rot="property:rotation; to:0 360 0; dur:15000; loop:true; easing:linear"
+      class="clickable"
+      id-ref="shark">
     </a-entity>
-
-    <!-- ③ SHARK -->
-    <a-entity id="c-shark" position="0 0.2 0.85"
-      animation="property:position; to:0 0.38 0.85; dur:3200; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:13000; loop:true; easing:linear">
-      <a-cone radius-bottom="0.1" radius-top="0.01" height="0.55" rotation="90 0 0" color="#607d8b" roughness="0.5"></a-cone>
-      <a-cone radius-bottom="0.035" radius-top="0.005" height="0.13" position="0 0.12 0" rotation="0 0 25" color="#546e7a"></a-cone>
-      <a-sphere radius="0.22" color="#607d8b" opacity="0.06" side="back"></a-sphere>
-    </a-entity>
-
-    <!-- ④ JELLYFISH -->
-    <a-entity id="c-jellyfish" position="-0.5 0.35 -0.55"
-      animation="property:position; to:-0.5 0.52 -0.55; dur:1900; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:9000; loop:true; easing:linear">
-      <a-sphere radius="0.11" scale="1 0.52 1" color="#9ecfff" opacity="0.72" metalness="0.3" roughness="0.1"></a-sphere>
-      <a-cylinder radius="0.005" height="0.17" position=" 0    -0.13  0   " color="#c8e8ff" opacity="0.5"></a-cylinder>
-      <a-cylinder radius="0.005" height="0.14" position=" 0.05 -0.12  0.04" color="#c8e8ff" opacity="0.4"></a-cylinder>
-      <a-cylinder radius="0.005" height="0.15" position="-0.05 -0.12  0   " color="#c8e8ff" opacity="0.4"></a-cylinder>
-      <a-cylinder radius="0.005" height="0.13" position=" 0.03 -0.11 -0.05" color="#c8e8ff" opacity="0.35"></a-cylinder>
-      <a-sphere radius="0.17"  color="#9ecfff" opacity="0.08" side="back"></a-sphere>
-    </a-entity>
-
-    <!-- ⑤ OCTOPUS -->
-    <a-entity id="c-octopus" position="0.55 0.18 -0.65"
-      animation="property:position; to:0.55 0.36 -0.65; dur:2500; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:10000; loop:true; easing:linear">
-      <a-sphere radius="0.1" color="#c2624a" roughness="0.6"></a-sphere>
-      <a-cylinder radius="0.014" height="0.14" position=" 0.08 -0.1  0.04" rotation=" 20 0  30" color="#c2624a" opacity="0.8"></a-cylinder>
-      <a-cylinder radius="0.014" height="0.14" position="-0.08 -0.1  0.04" rotation=" 20 0 -30" color="#c2624a" opacity="0.8"></a-cylinder>
-      <a-cylinder radius="0.014" height="0.14" position=" 0.04 -0.1 -0.08" rotation="-20 0  20" color="#c2624a" opacity="0.8"></a-cylinder>
-      <a-cylinder radius="0.014" height="0.14" position="-0.04 -0.1 -0.08" rotation="-20 0 -20" color="#c2624a" opacity="0.8"></a-cylinder>
-      <a-sphere radius="0.16"  color="#c2624a" opacity="0.07" side="back"></a-sphere>
-    </a-entity>
-
-    <!-- ⑥ WHALE -->
-    <a-entity id="c-whale" position="-0.45 0.22 0.75"
-      animation="property:position; to:-0.45 0.42 0.75; dur:3800; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:16000; loop:true; easing:linear">
-      <a-sphere radius="0.16" scale="2.2 0.68 1" color="#2a6099" roughness="0.5"></a-sphere>
-      <a-box width="0.22" height="0.035" depth="0.1" position="-0.38 0 0" rotation="0 0 8" color="#234e7d"></a-box>
-      <a-sphere radius="0.016" position="0.29 0.05 0.1" color="#111"></a-sphere>
-      <a-sphere radius="0.44"  color="#2a6099" opacity="0.05" side="back"></a-sphere>
-    </a-entity>
-
-    <!-- ⑦ PUFFERFISH -->
-    <a-entity id="c-pufferfish" position="0.1 0.18 -0.8"
-      animation="property:position; to:0.1 0.36 -0.8; dur:2100; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:7500; loop:true; easing:linear">
-      <a-sphere radius="0.09" color="#e8c84a" roughness="0.5"></a-sphere>
-      <a-cone radius-bottom="0.012" radius-top="0.002" height="0.07" position=" 0     0.1    0   " color="#d4b030"></a-cone>
-      <a-cone radius-bottom="0.012" radius-top="0.002" height="0.06" position=" 0.09  0.045  0   " rotation="0 0 -70" color="#d4b030"></a-cone>
-      <a-cone radius-bottom="0.012" radius-top="0.002" height="0.06" position="-0.09  0.045  0   " rotation="0 0  70" color="#d4b030"></a-cone>
-      <a-cone radius-bottom="0.012" radius-top="0.002" height="0.06" position=" 0     0.045  0.09" rotation="-70 0 0" color="#d4b030"></a-cone>
-      <a-cone radius-bottom="0.012" radius-top="0.002" height="0.06" position=" 0     0.045 -0.09" rotation=" 70 0 0" color="#d4b030"></a-cone>
-      <a-sphere radius="0.14"  color="#e8c84a" opacity="0.08" side="back"></a-sphere>
-    </a-entity>
-
-    <!-- ⑧ SQUID -->
-    <a-entity id="c-squid" position="-0.2 0.22 -0.25"
-      animation="property:position; to:-0.2 0.42 -0.25; dur:2600; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:12000; loop:true; easing:linear">
-      <a-cone radius-bottom="0.07" radius-top="0.02" height="0.3" color="#c44569" roughness="0.4"></a-cone>
-      <a-cylinder radius="0.008" height="0.16" position=" 0.04 -0.22  0   " color="#a33055" opacity="0.8"></a-cylinder>
-      <a-cylinder radius="0.008" height="0.18" position="-0.04 -0.22  0   " color="#a33055" opacity="0.8"></a-cylinder>
-      <a-cylinder radius="0.008" height="0.14" position=" 0    -0.22  0.04" color="#a33055" opacity="0.7"></a-cylinder>
-      <a-cylinder radius="0.008" height="0.14" position=" 0    -0.22 -0.04" color="#a33055" opacity="0.7"></a-cylinder>
-      <a-cone radius-bottom="0.055" radius-top="0.01" height="0.075" position=" 0.06 0.1 0" rotation="0 0 -58" color="#c44569" opacity="0.7"></a-cone>
-      <a-cone radius-bottom="0.055" radius-top="0.01" height="0.075" position="-0.06 0.1 0" rotation="0 0  58" color="#c44569" opacity="0.7"></a-cone>
-      <a-sphere radius="0.2"   color="#c44569" opacity="0.06" side="back"></a-sphere>
-    </a-entity>
-
   </a-marker>
 
   <a-entity camera></a-entity>
 </a-scene>
 
+<!-- Three.js for model viewer -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
+
+// ══════════════════════════════════════════
+//  CREATURE DATA
+// ══════════════════════════════════════════
 const CREATURES = {
-  'c-clownfish':  { name:'Clownfish',        sciName:'Amphiprioninae',       emoji:'🐠', habitat:'Coral Reefs, Indo-Pacific',        diet:'Algae, Plankton',     depth:'1–15 m',    status:'Least Concern',         fact:'All clownfish are born male. The dominant one can switch to female!' },
-  'c-turtle':     { name:'Green Sea Turtle', sciName:'Chelonia mydas',        emoji:'🐢', habitat:'Tropical & Subtropical Oceans',    diet:'Seagrass, Algae',     depth:'0–30 m',    status:'Endangered',            fact:'They can hold their breath for up to 7 hours while sleeping underwater.' },
-  'c-shark':      { name:'Hammerhead Shark', sciName:'Sphyrna mokarran',      emoji:'🦈', habitat:'Warm Coastal Waters',              diet:'Fish, Rays, Octopus', depth:'0–300 m',   status:'Critically Endangered', fact:'Their wide-set eyes give 360° vertical vision — above and below simultaneously.' },
-  'c-jellyfish':  { name:'Moon Jellyfish',   sciName:'Aurelia aurita',        emoji:'🪼', habitat:'Coastal & Open Ocean Worldwide',   diet:'Plankton, Larvae',    depth:'0–200 m',   status:'Not Evaluated',         fact:'No brain, heart, or bones — yet they\'ve survived for 500 million years.' },
-  'c-octopus':    { name:'Common Octopus',   sciName:'Octopus vulgaris',      emoji:'🐙', habitat:'Coral Reefs, Rocky Seabeds',       diet:'Crabs, Shrimp, Fish', depth:'0–200 m',   status:'Least Concern',         fact:'Three hearts, blue blood, and can edit their own RNA to adapt to temperature.' },
-  'c-whale':      { name:'Blue Whale',       sciName:'Balaenoptera musculus', emoji:'🐋', habitat:'Open Ocean, All Major Seas',       diet:'Krill',               depth:'0–500 m',   status:'Endangered',            fact:'The largest animal ever — its heart alone is the size of a small car.' },
-  'c-pufferfish': { name:'Pufferfish',       sciName:'Tetraodontidae',        emoji:'🐡', habitat:'Tropical & Subtropical Seas',      diet:'Algae, Shellfish',    depth:'1–100 m',   status:'Varies by Species',     fact:'Contains tetrodotoxin — 1200× more toxic than cyanide — yet eaten as a delicacy.' },
-  'c-squid':      { name:'Giant Squid',      sciName:'Architeuthis dux',      emoji:'🦑', habitat:'Deep Ocean Worldwide',             diet:'Fish, Other Squid',   depth:'200–1000 m',status:'Least Concern',         fact:'Has the largest eyes in the animal kingdom — up to 30 cm in diameter.' }
+  fish: {
+    name: 'School of Fish',
+    sciName: 'Atheriniformes spp.',
+    emoji: '🐠',
+    modelFile: 'models/school_of_fish.glb',
+    scale: 0.008,
+    habitat: 'Coral Reefs, Open Ocean',
+    diet: 'Plankton, Small Invertebrates',
+    depth: '0–200 m',
+    status: 'Least Concern',
+    fact: 'Fish school in tight formations to confuse predators — the group moves as one organism, making it hard to target a single fish.'
+  },
+  shark: {
+    name: 'Swimming Shark',
+    sciName: 'Carcharhinus sp.',
+    emoji: '🦈',
+    modelFile: 'models/swimming_shark.glb',
+    scale: 0.012,
+    habitat: 'Open Ocean, Coastal Waters',
+    diet: 'Fish, Rays, Marine Mammals',
+    depth: '0–600 m',
+    status: 'Vulnerable',
+    fact: 'Sharks have been around for over 450 million years — older than trees. They have electroreceptors that detect the heartbeat of hidden prey.'
+  }
 };
 
+let currentCreature = 'fish';
 let infoOpen = false;
 
+// Three.js model viewer state
+let mvRenderer, mvScene, mvCamera, mvModel, mvClock;
+let mvDragging = false, mvPrevTouch = null, mvDragMoved = false;
+let mvSpherical = { theta: 0.3, phi: 1.2, radius: 3 };
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   makeBubbles();
   setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1400);
@@ -454,6 +471,9 @@ function makeBubbles() {
   }
 }
 
+// ══════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════
 document.getElementById('startBtn').addEventListener('click', () => {
   document.getElementById('splash').classList.add('hidden');
   document.getElementById('markerGuide').classList.add('show');
@@ -466,27 +486,222 @@ document.getElementById('launchBtn').addEventListener('click', () => {
   setupAR();
 });
 
+// ══════════════════════════════════════════
+//  AR SETUP
+// ══════════════════════════════════════════
 function setupAR() {
   const marker = document.getElementById('hiroMarker');
 
   marker.addEventListener('markerFound', () => {
     document.getElementById('hud').classList.add('found');
-  });
-  marker.addEventListener('markerLost', () => {
-    document.getElementById('hud').classList.remove('found');
-    if (infoOpen) closeCard();
+    document.getElementById('creatureSelector').classList.add('active');
   });
 
-  Object.keys(CREATURES).forEach(id => {
+  marker.addEventListener('markerLost', () => {
+    document.getElementById('hud').classList.remove('found');
+    document.getElementById('creatureSelector').classList.remove('active');
+  });
+
+  // Tap on AR entities → open model viewer
+  ['ar-fish', 'ar-shark'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener('click', () => showCard(id));
-    el.addEventListener('touchstart', e => { e.stopPropagation(); showCard(id); }, { passive:true });
+    const creatureId = id === 'ar-fish' ? 'fish' : 'shark';
+    el.addEventListener('click', () => openModelViewer(creatureId));
+    el.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      openModelViewer(creatureId);
+    }, { passive: true });
   });
 }
 
-function showCard(id) {
-  if (infoOpen) return;
+// ══════════════════════════════════════════
+//  CREATURE SELECTOR BUTTONS
+// ══════════════════════════════════════════
+function selectCreature(id) {
+  currentCreature = id;
+  document.querySelectorAll('.creature-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + id).classList.add('active');
+}
+
+// ══════════════════════════════════════════
+//  MODEL VIEWER (Three.js touch-to-rotate)
+// ══════════════════════════════════════════
+function openModelViewer(creatureId) {
+  currentCreature = creatureId;
+  const data = CREATURES[creatureId];
+
+  document.getElementById('mvTitle').textContent = data.name;
+  document.getElementById('modelViewer').classList.add('active');
+
+  if (!mvRenderer) {
+    initModelViewer();
+  }
+  loadModelInViewer(data.modelFile, data.scale);
+}
+
+function initModelViewer() {
+  const canvas = document.getElementById('mvCanvas');
+  mvRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  mvRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  mvRenderer.setClearColor(0x000000, 0);
+  resizeMV();
+
+  mvScene = new THREE.Scene();
+  mvCamera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
+  mvClock = new THREE.Clock();
+
+  // Lights
+  mvScene.add(new THREE.AmbientLight(0x88ccff, 1.5));
+  const d1 = new THREE.DirectionalLight(0xffffff, 1.0); d1.position.set(2, 3, 2); mvScene.add(d1);
+  const d2 = new THREE.DirectionalLight(0x1ab3c8, 0.5); d2.position.set(-2, 1, -2); mvScene.add(d2);
+
+  // Controls
+  setupMVControls(canvas);
+
+  window.addEventListener('resize', resizeMV);
+
+  // Render loop
+  function loop() {
+    requestAnimationFrame(loop);
+    if (!mvModel) return;
+    // Gentle auto-rotate when not dragging
+    if (!mvDragging) mvSpherical.theta += 0.003;
+    updateMVCamera();
+    mvRenderer.render(mvScene, mvCamera);
+  }
+  loop();
+}
+
+function resizeMV() {
+  if (!mvRenderer) return;
+  const canvas = document.getElementById('mvCanvas');
+  const w = window.innerWidth, h = window.innerHeight;
+  mvRenderer.setSize(w, h);
+  if (mvCamera) { mvCamera.aspect = w / h; mvCamera.updateProjectionMatrix(); }
+}
+
+function loadModelInViewer(modelPath, baseScale) {
+  // Remove previous model
+  if (mvModel) { mvScene.remove(mvModel); mvModel = null; }
+
+  // Use fetch + ArrayBuffer + GLTFLoader pattern
+  const loader = new THREE.GLTFLoader ? new THREE.GLTFLoader() : null;
+
+  if (!loader) {
+    // Fallback: load via script tag approach
+    loadGLTFViaImport(modelPath, baseScale);
+    return;
+  }
+
+  loader.load(modelPath, (gltf) => {
+    mvModel = gltf.scene;
+
+    // Auto-center and scale
+    const box = new THREE.Box3().setFromObject(mvModel);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const scale = 2.5 / maxDim;
+
+    mvModel.position.sub(center.multiplyScalar(scale));
+    mvModel.scale.setScalar(scale);
+
+    mvScene.add(mvModel);
+
+    // Play animations if any
+    if (gltf.animations && gltf.animations.length > 0) {
+      const mixer = new THREE.AnimationMixer(mvModel);
+      gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+      const clock = new THREE.Clock();
+      const animLoop = () => {
+        requestAnimationFrame(animLoop);
+        mixer.update(clock.getDelta());
+      };
+      animLoop();
+    }
+
+    mvSpherical = { theta: 0.3, phi: 1.2, radius: 4 };
+    updateMVCamera();
+  }, undefined, (err) => console.error('Model load error:', err));
+}
+
+function loadGLTFViaImport(modelPath, baseScale) {
+  // Dynamic import fallback for GLTFLoader
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+  script.onload = () => loadModelInViewer(modelPath, baseScale);
+  document.head.appendChild(script);
+}
+
+function setupMVControls(canvas) {
+  // Mouse
+  canvas.addEventListener('mousedown', e => { mvDragging = true; mvDragMoved = false; });
+  window.addEventListener('mouseup', () => { mvDragging = false; });
+  window.addEventListener('mousemove', e => {
+    if (!mvDragging) return;
+    mvDragMoved = true;
+    mvSpherical.theta -= e.movementX * 0.008;
+    mvSpherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, mvSpherical.phi - e.movementY * 0.008));
+  });
+
+  // Touch drag
+  canvas.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) { mvDragging = true; mvDragMoved = false; mvPrevTouch = e.touches[0]; }
+  }, { passive: true });
+  window.addEventListener('touchend', () => { mvDragging = false; mvPrevTouch = null; }, { passive: true });
+  window.addEventListener('touchmove', e => {
+    if (!mvDragging || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - mvPrevTouch.clientX;
+    const dy = t.clientY - mvPrevTouch.clientY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mvDragMoved = true;
+    mvPrevTouch = t;
+    mvSpherical.theta -= dx * 0.008;
+    mvSpherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, mvSpherical.phi - dy * 0.008));
+  }, { passive: true });
+
+  // Pinch zoom
+  let lastPinch = 0;
+  canvas.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+      if (lastPinch) mvSpherical.radius = Math.max(1.5, Math.min(8, mvSpherical.radius - (d - lastPinch) * 0.015));
+      lastPinch = d;
+    } else lastPinch = 0;
+  }, { passive: true });
+
+  // Scroll zoom
+  canvas.addEventListener('wheel', e => {
+    mvSpherical.radius = Math.max(1.5, Math.min(8, mvSpherical.radius + e.deltaY * 0.005));
+  }, { passive: true });
+}
+
+function updateMVCamera() {
+  if (!mvCamera) return;
+  mvCamera.position.set(
+    mvSpherical.radius * Math.sin(mvSpherical.phi) * Math.sin(mvSpherical.theta),
+    mvSpherical.radius * Math.cos(mvSpherical.phi),
+    mvSpherical.radius * Math.sin(mvSpherical.phi) * Math.cos(mvSpherical.theta)
+  );
+  mvCamera.lookAt(0, 0, 0);
+}
+
+// Close model viewer
+document.getElementById('mvCloseBtn').addEventListener('click', () => {
+  document.getElementById('modelViewer').classList.remove('active');
+  closeInfoCard();
+});
+
+// Learn More button → show info card
+document.getElementById('mvInfoBtn').addEventListener('click', () => {
+  showInfoCard(currentCreature);
+});
+
+// ══════════════════════════════════════════
+//  INFO CARD
+// ══════════════════════════════════════════
+function showInfoCard(id) {
   const d = CREATURES[id];
   if (!d) return;
   document.getElementById('cName').textContent    = d.name;
@@ -501,12 +716,17 @@ function showCard(id) {
   infoOpen = true;
 }
 
-function closeCard() {
+function closeInfoCard() {
   document.getElementById('infoCard').classList.remove('visible');
   infoOpen = false;
 }
 
-document.getElementById('closeBtn').addEventListener('click', closeCard);
+document.getElementById('closeInfoBtn').addEventListener('click', closeInfoCard);
+
 </script>
+
+<!-- GLTFLoader -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
 </body>
 </html>
