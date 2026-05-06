@@ -6,7 +6,7 @@
   <title>OceanAR — Immersive Sea Experience</title>
 
   <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
@@ -20,12 +20,34 @@
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Space Mono',monospace; background:var(--deep); color:var(--text); overflow:hidden; }
-    .a-enter-vr { display:none !important; }
+    body { font-family:'Space Mono',monospace; background:var(--deep); color:var(--text); overflow:hidden; height:100vh; width:100vw; }
+    .a-enter-vr, .a-enter-vr-button { display:none !important; }
+
+    /* ── LOADING ── */
+    #loading {
+      position:fixed; inset:0; z-index:2000; background:var(--deep);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem;
+      transition:opacity 0.6s ease;
+    }
+    #loading.hidden { opacity:0; pointer-events:none; }
+    .fish-anim { font-size:2.5rem; animation:swim 1s ease infinite alternate; }
+    @keyframes swim { from{transform:translateX(-20px)} to{transform:translateX(20px)} }
+    .load-label { font-size:0.58rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--teal); }
+    .load-sub   { font-size:0.5rem;  letter-spacing:0.15em; color:rgba(168,240,245,0.3); }
+    .load-track { width:140px; height:1px; background:rgba(26,179,200,0.15); position:relative; overflow:hidden; }
+    .load-track::after {
+      content:''; position:absolute; inset:0; background:var(--glow); animation:fill 1.5s ease infinite;
+    }
+    @keyframes fill {
+      0%{transform:scaleX(0);transform-origin:left}
+      50%{transform:scaleX(1);transform-origin:left}
+      51%{transform:scaleX(1);transform-origin:right}
+      100%{transform:scaleX(0);transform-origin:right}
+    }
 
     /* ── SPLASH ── */
     #splash {
-      position:fixed; inset:0; z-index:999;
+      position:fixed; inset:0; z-index:1500;
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       background:radial-gradient(ellipse at 50% 70%, #0a3a5a 0%, #020c18 70%);
       transition:opacity 0.7s ease;
@@ -35,28 +57,26 @@
     .bubbles { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
     .bubble {
       position:absolute; bottom:-40px; border-radius:50%;
-      background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25), rgba(26,179,200,0.08));
-      border:1px solid rgba(26,179,200,0.25);
-      animation:rise linear infinite;
+      background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(26,179,200,0.07));
+      border:1px solid rgba(26,179,200,0.2); animation:rise linear infinite;
     }
     @keyframes rise { to { transform:translateY(-110vh); opacity:0; } }
 
-    .splash-content { position:relative; z-index:2; text-align:center; padding:2rem; max-width:420px; }
+    .splash-content { position:relative; z-index:2; text-align:center; padding:2rem; max-width:400px; }
     .eyebrow { font-size:0.6rem; letter-spacing:0.35em; color:var(--teal); text-transform:uppercase; margin-bottom:1rem; opacity:0.8; }
-    .title {
+    .s-title {
       font-family:'Cormorant Garamond',serif;
-      font-size:clamp(3.2rem,11vw,6.5rem); font-weight:300; line-height:0.95;
-      color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.25); margin-bottom:0.3rem;
+      font-size:clamp(3rem,11vw,6rem); font-weight:300; line-height:0.95;
+      color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.2); margin-bottom:0.3rem;
     }
-    .title em { font-style:italic; color:var(--glow); }
-    .subtitle {
-      font-family:'Cormorant Garamond',serif;
-      font-size:clamp(0.9rem,2.5vw,1.2rem); font-style:italic; font-weight:300;
-      color:rgba(168,240,245,0.55); margin-bottom:1.8rem;
+    .s-title em { font-style:italic; color:var(--glow); }
+    .s-sub {
+      font-family:'Cormorant Garamond',serif; font-size:clamp(0.9rem,2.5vw,1.15rem);
+      font-style:italic; color:rgba(168,240,245,0.5); margin-bottom:1.8rem;
     }
     .pills { display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-bottom:1.8rem; }
     .pill {
-      font-size:0.55rem; letter-spacing:0.12em; text-transform:uppercase;
+      font-size:0.52rem; letter-spacing:0.12em; text-transform:uppercase;
       color:var(--teal); border:1px solid rgba(26,179,200,0.3);
       padding:0.28rem 0.6rem; border-radius:20px; background:rgba(26,179,200,0.05);
     }
@@ -73,185 +93,117 @@
     }
     #startBtn:hover { color:var(--deep); }
     #startBtn:hover::before { transform:scaleX(1); }
-    .note { margin-top:1rem; font-size:0.52rem; line-height:1.9; color:rgba(168,240,245,0.28); letter-spacing:0.06em; }
-    .note span { color:var(--teal); }
+    .s-note { margin-top:1rem; font-size:0.5rem; line-height:2; color:rgba(168,240,245,0.25); }
+    .s-note span { color:var(--teal); }
 
-    /* ── MARKER GUIDE ── */
-    #markerGuide {
-      position:fixed; inset:0; z-index:998;
-      display:none; align-items:center; justify-content:center;
-      background:rgba(2,12,24,0.97); flex-direction:column; gap:1.2rem; padding:2rem;
+    /* ── PERMISSION SCREEN ── */
+    #permScreen {
+      position:fixed; inset:0; z-index:1400;
+      display:none; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem;
+      background:rgba(2,12,24,0.97); padding:2rem; text-align:center;
     }
-    #markerGuide.show { display:flex; }
-    .guide-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; color:var(--foam); text-align:center; }
-    .guide-sub { font-size:0.55rem; letter-spacing:0.12em; color:rgba(168,240,245,0.4); text-transform:uppercase; text-align:center; margin-top:-0.5rem; }
-    .marker-frame {
-      background:#fff; padding:12px; border-radius:4px;
-      box-shadow:0 0 50px rgba(0,255,231,0.25), 0 0 0 1px rgba(0,255,231,0.15);
-    }
-    .marker-frame img { width:200px; height:200px; display:block; image-rendering:pixelated; }
-    .marker-label { font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); text-align:center; }
-    .guide-steps { text-align:left; width:100%; max-width:320px; }
-    .guide-steps li {
-      font-size:0.58rem; letter-spacing:0.08em; color:rgba(168,240,245,0.6);
-      margin-bottom:0.55rem; list-style:none; padding-left:1.2rem; position:relative; line-height:1.6;
-    }
-    .guide-steps li::before { content:'→'; position:absolute; left:0; color:var(--teal); }
-    #launchBtn {
-      background:var(--glow); color:var(--deep);
-      font-family:'Space Mono',monospace; font-size:0.7rem;
-      letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.2rem; border:none; cursor:pointer;
-      font-weight:700; width:100%; max-width:320px;
+    #permScreen.show { display:flex; }
+    .perm-icon { font-size:3rem; }
+    .perm-title { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; color:var(--foam); }
+    .perm-desc  { font-size:0.55rem; line-height:2; color:rgba(168,240,245,0.4); max-width:280px; letter-spacing:0.05em; }
+    .perm-steps { text-align:left; max-width:300px; }
+    .perm-steps li { font-size:0.56rem; letter-spacing:0.08em; color:rgba(168,240,245,0.55); margin-bottom:0.5rem; list-style:none; padding-left:1.2rem; position:relative; line-height:1.7; }
+    .perm-steps li::before { content:'→'; position:absolute; left:0; color:var(--teal); }
+    #grantBtn {
+      background:var(--glow); color:var(--deep); font-family:'Space Mono',monospace;
+      font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase;
+      padding:0.9rem 2.2rem; border:none; cursor:pointer; font-weight:700; width:100%; max-width:300px;
     }
 
     /* ── HUD ── */
-    #hud { position:fixed; inset:0; z-index:100; pointer-events:none; display:none; }
+    #hud { position:fixed; inset:0; z-index:200; pointer-events:none; display:none; }
     #hud.active { display:block; }
+
     .hud-top {
       position:absolute; top:0; left:0; right:0; padding:1.2rem 1.5rem;
       display:flex; justify-content:space-between; align-items:center;
-      background:linear-gradient(to bottom, rgba(2,12,24,0.75), transparent);
+      background:linear-gradient(to bottom, rgba(2,12,24,0.8), transparent);
     }
     .hud-logo { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:300; color:var(--foam); }
     .hud-logo span { color:var(--glow); font-style:italic; }
-    .hud-status { font-size:0.5rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--teal); display:flex; align-items:center; gap:0.4rem; }
-    .dot { width:6px; height:6px; border-radius:50%; background:var(--glow); box-shadow:0 0 8px var(--glow); animation:pulse 2s infinite; }
+    .hud-right { display:flex; flex-direction:column; align-items:flex-end; gap:0.3rem; }
+    .hud-status { font-size:0.48rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--teal); display:flex; align-items:center; gap:0.4rem; }
+    .dot { width:5px; height:5px; border-radius:50%; background:var(--glow); box-shadow:0 0 6px var(--glow); animation:pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .hud-gps { font-size:0.42rem; letter-spacing:0.12em; color:rgba(168,240,245,0.35); text-transform:uppercase; }
 
     .hud-hint {
       position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      font-size:0.55rem; letter-spacing:0.18em; text-transform:uppercase;
-      color:rgba(168,240,245,0.5); white-space:nowrap; animation:fadePulse 3s infinite;
+      font-size:0.52rem; letter-spacing:0.15em; text-transform:uppercase;
+      color:rgba(168,240,245,0.45); white-space:nowrap; animation:fadePulse 3s infinite;
+      pointer-events:none;
     }
-    @keyframes fadePulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+    @keyframes fadePulse { 0%,100%{opacity:0.35} 50%{opacity:0.9} }
 
+    /* scan rings while waiting for GPS -->*/
     .scan-ring {
-      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-      border-radius:50%; border:1px solid rgba(0,255,231,0.2);
+      position:absolute; top:50%; left:50%;
+      border-radius:50%; border:1px solid rgba(0,255,231,0.15);
       animation:scanPulse 2.5s ease infinite; pointer-events:none;
     }
-    .scan-ring:nth-child(2) { width:180px; height:180px; }
-    .scan-ring:nth-child(3) { width:260px; height:260px; animation-delay:0.8s; }
-    .scan-ring:nth-child(4) { width:340px; height:340px; animation-delay:1.6s; }
-    @keyframes scanPulse { 0%{opacity:0.6;transform:translate(-50%,-50%) scale(0.9)} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.1)} }
-    #hud.found .scan-ring, #hud.found .hud-hint { display:none; }
-
-    /* ── CREATURE SELECTOR ── */
-    #creatureSelector {
-      position:fixed; bottom:2rem; left:50%; transform:translateX(-50%);
-      display:none; gap:0.8rem; z-index:150; pointer-events:all;
+    .scan-ring:nth-child(1){ width:160px;height:160px;margin:-80px 0 0 -80px; }
+    .scan-ring:nth-child(2){ width:240px;height:240px;margin:-120px 0 0 -120px;animation-delay:.8s; }
+    .scan-ring:nth-child(3){ width:320px;height:320px;margin:-160px 0 0 -160px;animation-delay:1.6s; }
+    @keyframes scanPulse{
+      0%  { opacity:0.5; transform:scale(0.88); }
+      100%{ opacity:0;   transform:scale(1.08); }
     }
-    #creatureSelector.active { display:flex; }
+    #hud.placed .scan-ring, #hud.placed .hud-hint { display:none; }
 
-    .creature-btn {
-      background:rgba(2,12,24,0.85); border:1px solid rgba(26,179,200,0.3);
-      color:var(--foam); font-family:'Space Mono',monospace;
-      font-size:0.55rem; letter-spacing:0.1em; text-transform:uppercase;
-      padding:0.6rem 1rem; cursor:pointer; transition:all 0.2s;
-      backdrop-filter:blur(10px); display:flex; flex-direction:column;
-      align-items:center; gap:0.3rem;
+    /* ── FLOATING LABEL (DOM overlay per creature) ── */
+    .float-label {
+      position:fixed; z-index:300;
+      pointer-events:none;
+      transform:translate(-50%, -100%);
+      display:none; flex-direction:column; align-items:center; gap:0;
     }
-    .creature-btn.active {
-      border-color:var(--glow); color:var(--glow);
-      box-shadow:0 0 15px rgba(0,255,231,0.2);
-    }
-    .creature-btn span { font-size:1.4rem; }
+    .float-label.visible { display:flex; }
 
-    /* ── MODEL VIEWER OVERLAY (touch-to-rotate mode) ── */
-    #modelViewer {
-      position:fixed; inset:0; z-index:300;
-      background:radial-gradient(ellipse at 50% 60%, #0a3a5a 0%, #020c18 80%);
-      display:none; flex-direction:column; align-items:center; justify-content:center;
+    .label-card {
+      background:rgba(2,12,24,0.88);
+      border:1px solid rgba(0,255,231,0.35);
+      backdrop-filter:blur(16px);
+      padding:0.75rem 1rem;
+      min-width:180px; max-width:240px;
+      box-shadow:0 8px 32px rgba(0,0,0,0.5), 0 0 20px rgba(0,255,231,0.08);
+      text-align:center;
     }
-    #modelViewer.active { display:flex; }
+    .label-emoji  { font-size:1.6rem; margin-bottom:0.3rem; display:block; filter:drop-shadow(0 0 8px rgba(0,255,231,0.4)); }
+    .label-name   { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--foam); line-height:1; margin-bottom:0.15rem; }
+    .label-sci    { font-family:'Cormorant Garamond',serif; font-size:0.62rem; font-style:italic; color:rgba(168,240,245,0.4); margin-bottom:0.5rem; }
+    .label-divider{ height:1px; background:linear-gradient(90deg,transparent,rgba(0,255,231,0.3),transparent); margin-bottom:0.5rem; }
+    .label-fact   { font-size:0.56rem; line-height:1.7; color:rgba(168,240,245,0.7); letter-spacing:0.04em; margin-bottom:0.5rem; }
+    .label-loc-row{ display:flex; align-items:center; justify-content:center; gap:0.35rem; }
+    .label-loc-icon{ font-size:0.7rem; }
+    .label-loc    { font-size:0.5rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--teal); }
 
-    .mv-header {
-      position:absolute; top:0; left:0; right:0; padding:1.2rem 1.5rem;
-      display:flex; justify-content:space-between; align-items:center;
-      background:linear-gradient(to bottom, rgba(2,12,24,0.85), transparent);
-      z-index:2;
+    /* connector line */
+    .label-line {
+      width:1px; height:28px;
+      background:linear-gradient(to bottom, rgba(0,255,231,0.4), transparent);
     }
-    .mv-title { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:300; color:var(--foam); }
-    .mv-close {
-      background:transparent; border:1px solid rgba(168,240,245,0.2);
-      color:rgba(168,240,245,0.5); font-family:'Space Mono',monospace;
-      font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase;
-      padding:0.5rem 1rem; cursor:pointer; transition:all 0.2s;
-    }
-    .mv-close:hover { border-color:var(--teal); color:var(--teal); }
-
-    #mvCanvas { width:100%; height:100%; display:block; touch-action:none; }
-
-    .mv-hint {
-      position:absolute; bottom:9rem; left:50%; transform:translateX(-50%);
-      font-size:0.52rem; letter-spacing:0.15em; text-transform:uppercase;
-      color:rgba(168,240,245,0.35); white-space:nowrap; pointer-events:none;
+    .label-dot-bottom {
+      width:7px; height:7px; border-radius:50%;
+      background:var(--glow); box-shadow:0 0 8px var(--glow);
+      margin-top:-2px;
     }
 
-    .mv-info-btn {
-      position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      background:var(--glow); color:var(--deep);
-      font-family:'Space Mono',monospace; font-size:0.65rem;
-      letter-spacing:0.18em; text-transform:uppercase;
-      padding:0.85rem 2rem; border:none; cursor:pointer; font-weight:700;
-      pointer-events:all;
+    /* tap ripple on creature */
+    .tap-ripple {
+      position:fixed; width:50px; height:50px;
+      border-radius:50%; border:2px solid var(--glow);
+      pointer-events:none; z-index:250;
+      transform:translate(-50%,-50%) scale(0);
+      animation:ripple 0.6s ease forwards;
     }
-
-    /* ── INFO CARD ── */
-    #infoCard {
-      position:fixed; bottom:-100%; left:50%; transform:translateX(-50%);
-      width:min(420px,93vw); z-index:400; pointer-events:all;
-      transition:bottom 0.45s cubic-bezier(0.16,1,0.3,1);
-    }
-    #infoCard.visible { bottom:1.5rem; }
-
-    .card-wrap {
-      background:linear-gradient(135deg,rgba(10,37,64,0.97),rgba(2,12,24,0.97));
-      border:1px solid rgba(26,179,200,0.25); border-radius:2px; overflow:hidden;
-      backdrop-filter:blur(20px);
-      box-shadow:0 20px 60px rgba(0,0,0,0.7),0 0 40px rgba(0,255,231,0.05);
-    }
-    .card-bar { height:3px; background:linear-gradient(90deg,var(--glow),var(--teal),transparent); }
-    .card-body { padding:1.4rem; }
-    .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.9rem; }
-    .card-name { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:300; color:var(--foam); line-height:1; }
-    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.8rem; font-style:italic; color:rgba(168,240,245,0.4); margin-top:0.15rem; }
-    .card-emoji { font-size:2.4rem; filter:drop-shadow(0 0 10px rgba(0,255,231,0.35)); }
-    .card-hr { height:1px; background:linear-gradient(90deg,rgba(26,179,200,0.3),transparent); margin-bottom:0.9rem; }
-    .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; margin-bottom:0.9rem; }
-    .stat label { display:block; font-size:0.48rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); margin-bottom:0.15rem; }
-    .stat value { font-size:0.7rem; color:var(--foam); line-height:1.4; }
-    .fact-box { background:rgba(0,255,231,0.04); border-left:2px solid var(--glow); padding:0.7rem 0.9rem; margin-bottom:1.1rem; }
-    .fact-label { font-size:0.48rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--glow); margin-bottom:0.25rem; }
-    .fact-text { font-family:'Cormorant Garamond',serif; font-size:0.9rem; font-style:italic; color:rgba(168,240,245,0.8); line-height:1.5; }
-    #closeInfoBtn {
-      width:100%; background:transparent; border:1px solid rgba(26,179,200,0.2);
-      color:rgba(168,240,245,0.4); font-family:'Space Mono',monospace;
-      font-size:0.52rem; letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.65rem; cursor:pointer; transition:all 0.2s;
-    }
-    #closeInfoBtn:hover { border-color:var(--teal); color:var(--teal); }
-
-    /* ── LOADING ── */
-    #loading {
-      position:fixed; inset:0; z-index:1000; background:var(--deep);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem;
-      transition:opacity 0.5s;
-    }
-    #loading.hidden { opacity:0; pointer-events:none; }
-    .fish-anim { font-size:2rem; animation:swim 1s ease infinite alternate; }
-    @keyframes swim { from{transform:translateX(-18px)} to{transform:translateX(18px)} }
-    .load-label { font-size:0.58rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--teal); }
-    .load-track { width:140px; height:1px; background:rgba(26,179,200,0.2); position:relative; overflow:hidden; }
-    .load-track::after {
-      content:''; position:absolute; inset:0; background:var(--glow); animation:fill 1.5s ease infinite;
-    }
-    @keyframes fill {
-      0%{transform:scaleX(0);transform-origin:left}
-      50%{transform:scaleX(1);transform-origin:left}
-      51%{transform:scaleX(1);transform-origin:right}
-      100%{transform:scaleX(0);transform-origin:right}
+    @keyframes ripple {
+      0%  { transform:translate(-50%,-50%) scale(0);   opacity:1; }
+      100%{ transform:translate(-50%,-50%) scale(2.5); opacity:0; }
     }
   </style>
 </head>
@@ -259,8 +211,9 @@
 
 <!-- LOADING -->
 <div id="loading">
-  <div class="fish-anim">🐠</div>
+  <div class="fish-anim">🌊</div>
   <div class="load-label">Preparing the ocean</div>
+  <div class="load-sub">Loading sea creatures…</div>
   <div class="load-track"></div>
 </div>
 
@@ -269,195 +222,154 @@
   <div class="bubbles" id="bubblesEl"></div>
   <div class="splash-content">
     <p class="eyebrow">CPIS360 — Immersive AR Experience</p>
-    <h1 class="title">Ocean<em>AR</em></h1>
-    <p class="subtitle">Dive into the deep without leaving your room</p>
+    <h1 class="s-title">Ocean<em>AR</em></h1>
+    <p class="s-sub">Sea creatures floating in your world</p>
     <div class="pills">
       <span class="pill">🐠 School of Fish</span>
       <span class="pill">🦈 Swimming Shark</span>
     </div>
     <button id="startBtn">Enter the Ocean</button>
-    <p class="note">
-      Works on <span>iOS Safari</span> &amp; <span>Android Chrome</span>.<br>
-      Point camera at Hiro marker · Tap creature to examine &amp; learn
+    <p class="s-note">
+      Requires <span>GPS + Camera</span> permissions.<br>
+      Best outdoors or near a window.<br>
+      Tap any creature to learn about it.
     </p>
   </div>
 </div>
 
-<!-- MARKER GUIDE -->
-<div id="markerGuide">
-  <h2 class="guide-title">Your AR Marker</h2>
-  <p class="guide-sub">Official Hiro Marker — AR.js</p>
-  <div class="marker-frame">
-    <img src="https://raw.githack.com/AR-js-org/AR.js/master/data/images/hiro.png" alt="Hiro AR Marker"
-      onerror="this.src='https://jeromeetienne.github.io/AR.js/data/images/hiro.png'"/>
-  </div>
-  <p class="marker-label">Print this or display on another screen</p>
-  <ul class="guide-steps">
-    <li>Print or show this marker on a second screen</li>
-    <li>Tap "Launch AR Camera" and allow camera access</li>
-    <li>Point camera at the Hiro marker</li>
-    <li>Two sea creatures will appear — tap one to examine it in 3D</li>
-    <li>Rotate with finger drag · Pinch to zoom · Tap "Learn More" for info</li>
+<!-- PERMISSIONS SCREEN -->
+<div id="permScreen">
+  <div class="perm-icon">📍</div>
+  <div class="perm-title">Allow Location</div>
+  <div class="perm-desc">OceanAR needs your GPS location to place sea creatures in the real world around you.</div>
+  <ul class="perm-steps">
+    <li>Allow location access when prompted</li>
+    <li>Allow camera access when prompted</li>
+    <li>Go outdoors or near a window for best GPS accuracy</li>
+    <li>Walk around — creatures are placed nearby</li>
   </ul>
-  <button id="launchBtn">Launch AR Camera</button>
+  <button id="grantBtn">Grant Permissions &amp; Start</button>
 </div>
 
 <!-- HUD -->
 <div id="hud">
   <div class="hud-top">
     <div class="hud-logo">Ocean<span>AR</span></div>
-    <div class="hud-status"><div class="dot"></div>AR Live</div>
-  </div>
-  <div class="scan-ring"></div>
-  <div class="scan-ring"></div>
-  <div class="scan-ring"></div>
-  <div class="hud-hint">Point camera at the Hiro marker</div>
-</div>
-
-<!-- CREATURE SELECTOR (shown when marker found) -->
-<div id="creatureSelector">
-  <button class="creature-btn active" id="btn-fish" onclick="selectCreature('fish')">
-    <span>🐠</span>School of Fish
-  </button>
-  <button class="creature-btn" id="btn-shark" onclick="selectCreature('shark')">
-    <span>🦈</span>Shark
-  </button>
-</div>
-
-<!-- MODEL VIEWER OVERLAY -->
-<div id="modelViewer">
-  <div class="mv-header">
-    <div class="mv-title" id="mvTitle">School of Fish</div>
-    <button class="mv-close" id="mvCloseBtn">✕ Close</button>
-  </div>
-  <canvas id="mvCanvas"></canvas>
-  <div class="mv-hint">Drag to rotate · Pinch to zoom</div>
-  <button class="mv-info-btn" id="mvInfoBtn">✦ Learn More</button>
-</div>
-
-<!-- INFO CARD -->
-<div id="infoCard">
-  <div class="card-wrap">
-    <div class="card-bar"></div>
-    <div class="card-body">
-      <div class="card-header">
-        <div>
-          <div class="card-name" id="cName"></div>
-          <div class="card-sci"  id="cSci"></div>
-        </div>
-        <div class="card-emoji" id="cEmoji"></div>
-      </div>
-      <div class="card-hr"></div>
-      <div class="card-grid">
-        <div class="stat"><label>Habitat</label><value id="cHabitat"></value></div>
-        <div class="stat"><label>Diet</label><value id="cDiet"></value></div>
-        <div class="stat"><label>Depth</label><value id="cDepth"></value></div>
-        <div class="stat"><label>Conservation</label><value id="cStatus"></value></div>
-      </div>
-      <div class="fact-box">
-        <div class="fact-label">✦ Did You Know</div>
-        <div class="fact-text" id="cFact"></div>
-      </div>
-      <button id="closeInfoBtn">— Dismiss —</button>
+    <div class="hud-right">
+      <div class="hud-status"><div class="dot"></div>AR Live</div>
+      <div class="hud-gps" id="hudGPS">Acquiring GPS…</div>
     </div>
   </div>
+  <div class="scan-ring"></div>
+  <div class="scan-ring"></div>
+  <div class="scan-ring"></div>
+  <div class="hud-hint" id="hudHint">Acquiring your location…</div>
 </div>
 
-<!-- A-FRAME SCENE -->
+<!-- FLOATING LABELS (one per creature, positioned via JS) -->
+<div class="float-label" id="label-fish">
+  <div class="label-card">
+    <span class="label-emoji">🐠</span>
+    <div class="label-name">School of Fish</div>
+    <div class="label-sci">Atheriniformes spp.</div>
+    <div class="label-divider"></div>
+    <div class="label-fact">Fish school in tight formations to confuse predators — the group moves as one living organism.</div>
+    <div class="label-loc-row">
+      <span class="label-loc-icon">📍</span>
+      <span class="label-loc" id="loc-fish">Locating…</span>
+    </div>
+  </div>
+  <div class="label-line"></div>
+  <div class="label-dot-bottom"></div>
+</div>
+
+<div class="float-label" id="label-shark">
+  <div class="label-card">
+    <span class="label-emoji">🦈</span>
+    <div class="label-name">Swimming Shark</div>
+    <div class="label-sci">Carcharhinus sp.</div>
+    <div class="label-divider"></div>
+    <div class="label-fact">Sharks have electroreceptors that detect the heartbeat of hidden prey up to 1 metre away.</div>
+    <div class="label-loc-row">
+      <span class="label-loc-icon">📍</span>
+      <span class="label-loc" id="loc-shark">Locating…</span>
+    </div>
+  </div>
+  <div class="label-line"></div>
+  <div class="label-dot-bottom"></div>
+</div>
+
+<!-- A-FRAME GPS SCENE -->
 <a-scene
   id="arScene"
   embedded
-  arjs="sourceType:webcam; debugUIEnabled:false; detectionMode:mono_and_matrix; matrixCodeType:3x3;"
-  renderer="logarithmicDepthBuffer:true; antialias:true;"
+  arjs="sourceType:webcam; debugUIEnabled:false; videoTexture:true; trackingMethod:best;"
   vr-mode-ui="enabled:false"
+  renderer="antialias:true; alpha:true;"
   style="display:none; position:fixed; inset:0; z-index:50;"
 >
-  <a-assets>
+  <a-assets timeout="30000">
     <a-asset-item id="fishModel"  src="models/school_of_fish.glb"></a-asset-item>
     <a-asset-item id="sharkModel" src="models/swimming_shark.glb"></a-asset-item>
   </a-assets>
 
-  <a-marker preset="hiro" id="hiroMarker">
-    <a-light type="ambient"     color="#88ccff" intensity="0.8"></a-light>
-    <a-light type="directional" color="#ffffff" intensity="0.6" position="1 2 1"></a-light>
-    <a-light type="point"       color="#1ab3c8" intensity="0.8" position="0 1.5 0"></a-light>
+  <!-- SCHOOL OF FISH — placed ~8m north of user -->
+  <a-entity
+    id="ar-fish"
+    gltf-model="#fishModel"
+    scale="0.6 0.6 0.6"
+    gps-new-entity-place="latitude:0; longitude:0"
+    animation="property:position; from:0 1.2 0; to:0 1.7 0; dur:2500; dir:alternate; loop:true; easing:easeInOutSine"
+    animation__rot="property:rotation; to:0 360 0; dur:12000; loop:true; easing:linear"
+    look-at="[gps-new-camera]"
+    class="clickable"
+    id-ref="fish">
+  </a-entity>
 
-    <!-- School of Fish — left side -->
-    <a-entity
-      id="ar-fish"
-      gltf-model="#fishModel"
-      scale="0.008 0.008 0.008"
-      position="-0.5 0.1 0"
-      animation="property:position; to:-0.5 0.25 0; dur:2500; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:12000; loop:true; easing:linear"
-      class="clickable"
-      id-ref="fish">
-    </a-entity>
+  <!-- SWIMMING SHARK — placed ~10m north-east -->
+  <a-entity
+    id="ar-shark"
+    gltf-model="#sharkModel"
+    scale="0.8 0.8 0.8"
+    gps-new-entity-place="latitude:0; longitude:0"
+    animation="property:position; from:0 1.5 0; to:0 2.0 0; dur:3200; dir:alternate; loop:true; easing:easeInOutSine"
+    animation__rot="property:rotation; to:0 360 0; dur:15000; loop:true; easing:linear"
+    look-at="[gps-new-camera]"
+    class="clickable"
+    id-ref="shark">
+  </a-entity>
 
-    <!-- Swimming Shark — right side -->
-    <a-entity
-      id="ar-shark"
-      gltf-model="#sharkModel"
-      scale="0.012 0.012 0.012"
-      position="0.6 0.1 0"
-      animation="property:position; to:0.6 0.28 0; dur:3000; dir:alternate; loop:true; easing:easeInOutSine"
-      animation__rot="property:rotation; to:0 360 0; dur:15000; loop:true; easing:linear"
-      class="clickable"
-      id-ref="shark">
-    </a-entity>
-  </a-marker>
-
-  <a-entity camera></a-entity>
+  <a-camera gps-new-camera="gpsMinDistance:5" rotation-reader></a-camera>
 </a-scene>
 
-<!-- Three.js for model viewer -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-
-// ══════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  CREATURE DATA
-// ══════════════════════════════════════════
+// ══════════════════════════════════════════════
 const CREATURES = {
-  fish: {
-    name: 'School of Fish',
-    sciName: 'Atheriniformes spp.',
-    emoji: '🐠',
-    modelFile: 'models/school_of_fish.glb',
-    scale: 0.008,
-    habitat: 'Coral Reefs, Open Ocean',
-    diet: 'Plankton, Small Invertebrates',
-    depth: '0–200 m',
-    status: 'Least Concern',
-    fact: 'Fish school in tight formations to confuse predators — the group moves as one organism, making it hard to target a single fish.'
-  },
-  shark: {
-    name: 'Swimming Shark',
-    sciName: 'Carcharhinus sp.',
-    emoji: '🦈',
-    modelFile: 'models/swimming_shark.glb',
-    scale: 0.012,
-    habitat: 'Open Ocean, Coastal Waters',
-    diet: 'Fish, Rays, Marine Mammals',
-    depth: '0–600 m',
-    status: 'Vulnerable',
-    fact: 'Sharks have been around for over 450 million years — older than trees. They have electroreceptors that detect the heartbeat of hidden prey.'
-  }
+  fish:  { name:'School of Fish',  label:'label-fish',  loc:'loc-fish',  naturalHabitat:'Indo-Pacific Coral Reefs' },
+  shark: { name:'Swimming Shark',  label:'label-shark', loc:'loc-shark', naturalHabitat:'Warm Coastal & Open Oceans' }
 };
 
-let currentCreature = 'fish';
-let infoOpen = false;
+// Active labels
+const activeLabels = { fish: false, shark: false };
 
-// Three.js model viewer state
-let mvRenderer, mvScene, mvCamera, mvModel, mvClock;
-let mvDragging = false, mvPrevTouch = null, mvDragMoved = false;
-let mvSpherical = { theta: 0.3, phi: 1.2, radius: 3 };
+// User GPS
+let userLat = null, userLng = null;
+let gpsReady = false;
 
-// ══════════════════════════════════════════
+// Creature world positions (set after GPS fix)
+const creatureOffsets = {
+  fish:  { dLat:  0.00008, dLng:  0.00005 },  // ~8m north, 5m east
+  shark: { dLat:  0.00006, dLng: -0.00008 }   // ~6m north, 8m west
+};
+
+// ══════════════════════════════════════════════
 //  INIT
-// ══════════════════════════════════════════
+// ══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   makeBubbles();
-  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1400);
+  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1600);
 });
 
 function makeBubbles() {
@@ -466,267 +378,250 @@ function makeBubbles() {
     const b = document.createElement('div');
     b.className = 'bubble';
     const s = Math.random()*26+8;
-    b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*8+6}s;animation-delay:${Math.random()*8}s;opacity:${Math.random()*0.35+0.08};`;
+    b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*8+6}s;animation-delay:${Math.random()*8}s;opacity:${Math.random()*0.3+0.08};`;
     el.appendChild(b);
   }
 }
 
-// ══════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════
+// ══════════════════════════════════════════════
+//  SPLASH → PERMISSIONS → AR
+// ══════════════════════════════════════════════
 document.getElementById('startBtn').addEventListener('click', () => {
   document.getElementById('splash').classList.add('hidden');
-  document.getElementById('markerGuide').classList.add('show');
+  document.getElementById('permScreen').classList.add('show');
 });
 
-document.getElementById('launchBtn').addEventListener('click', () => {
-  document.getElementById('markerGuide').classList.remove('show');
+document.getElementById('grantBtn').addEventListener('click', () => {
+  document.getElementById('permScreen').classList.remove('show');
+  startAR();
+});
+
+function startAR() {
   document.getElementById('arScene').style.display = 'block';
   document.getElementById('hud').classList.add('active');
-  setupAR();
-});
-
-// ══════════════════════════════════════════
-//  AR SETUP
-// ══════════════════════════════════════════
-function setupAR() {
-  const marker = document.getElementById('hiroMarker');
-
-  marker.addEventListener('markerFound', () => {
-    document.getElementById('hud').classList.add('found');
-    document.getElementById('creatureSelector').classList.add('active');
-  });
-
-  marker.addEventListener('markerLost', () => {
-    document.getElementById('hud').classList.remove('found');
-    document.getElementById('creatureSelector').classList.remove('active');
-  });
-
-  // Tap on AR entities → open model viewer
-  ['ar-fish', 'ar-shark'].forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const creatureId = id === 'ar-fish' ? 'fish' : 'shark';
-    el.addEventListener('click', () => openModelViewer(creatureId));
-    el.addEventListener('touchstart', (e) => {
-      e.stopPropagation();
-      openModelViewer(creatureId);
-    }, { passive: true });
-  });
+  startGPS();
+  setupCreatureInteraction();
 }
 
-// ══════════════════════════════════════════
-//  CREATURE SELECTOR BUTTONS
-// ══════════════════════════════════════════
-function selectCreature(id) {
-  currentCreature = id;
-  document.querySelectorAll('.creature-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-' + id).classList.add('active');
-}
-
-// ══════════════════════════════════════════
-//  MODEL VIEWER (Three.js touch-to-rotate)
-// ══════════════════════════════════════════
-function openModelViewer(creatureId) {
-  currentCreature = creatureId;
-  const data = CREATURES[creatureId];
-
-  document.getElementById('mvTitle').textContent = data.name;
-  document.getElementById('modelViewer').classList.add('active');
-
-  if (!mvRenderer) {
-    initModelViewer();
-  }
-  loadModelInViewer(data.modelFile, data.scale);
-}
-
-function initModelViewer() {
-  const canvas = document.getElementById('mvCanvas');
-  mvRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  mvRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  mvRenderer.setClearColor(0x000000, 0);
-  resizeMV();
-
-  mvScene = new THREE.Scene();
-  mvCamera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.01, 1000);
-  mvClock = new THREE.Clock();
-
-  // Lights
-  mvScene.add(new THREE.AmbientLight(0x88ccff, 1.5));
-  const d1 = new THREE.DirectionalLight(0xffffff, 1.0); d1.position.set(2, 3, 2); mvScene.add(d1);
-  const d2 = new THREE.DirectionalLight(0x1ab3c8, 0.5); d2.position.set(-2, 1, -2); mvScene.add(d2);
-
-  // Controls
-  setupMVControls(canvas);
-
-  window.addEventListener('resize', resizeMV);
-
-  // Render loop
-  function loop() {
-    requestAnimationFrame(loop);
-    if (!mvModel) return;
-    // Gentle auto-rotate when not dragging
-    if (!mvDragging) mvSpherical.theta += 0.003;
-    updateMVCamera();
-    mvRenderer.render(mvScene, mvCamera);
-  }
-  loop();
-}
-
-function resizeMV() {
-  if (!mvRenderer) return;
-  const canvas = document.getElementById('mvCanvas');
-  const w = window.innerWidth, h = window.innerHeight;
-  mvRenderer.setSize(w, h);
-  if (mvCamera) { mvCamera.aspect = w / h; mvCamera.updateProjectionMatrix(); }
-}
-
-function loadModelInViewer(modelPath, baseScale) {
-  // Remove previous model
-  if (mvModel) { mvScene.remove(mvModel); mvModel = null; }
-
-  // Use fetch + ArrayBuffer + GLTFLoader pattern
-  const loader = new THREE.GLTFLoader ? new THREE.GLTFLoader() : null;
-
-  if (!loader) {
-    // Fallback: load via script tag approach
-    loadGLTFViaImport(modelPath, baseScale);
+// ══════════════════════════════════════════════
+//  GPS
+// ══════════════════════════════════════════════
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('hudGPS').textContent = 'GPS not available';
     return;
   }
 
-  loader.load(modelPath, (gltf) => {
-    mvModel = gltf.scene;
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      const acc = Math.round(pos.coords.accuracy);
 
-    // Auto-center and scale
-    const box = new THREE.Box3().setFromObject(mvModel);
-    const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z);
-    const scale = 2.5 / maxDim;
+      document.getElementById('hudGPS').textContent = `GPS ±${acc}m`;
+      document.getElementById('hudHint').textContent = 'Look around — creatures are near you';
+      document.getElementById('hud').classList.add('placed');
 
-    mvModel.position.sub(center.multiplyScalar(scale));
-    mvModel.scale.setScalar(scale);
+      if (!gpsReady) {
+        gpsReady = true;
+        placeCreatures();
+      }
 
-    mvScene.add(mvModel);
+      // Update creature location text with reverse-geocoded area
+      updateCreatureLocations();
+    },
+    (err) => {
+      document.getElementById('hudGPS').textContent = 'GPS error';
+      console.warn('GPS error:', err);
+      // Fallback: place creatures at default offsets anyway
+      if (!gpsReady) {
+        gpsReady = true;
+        userLat = 21.5433; // Jeddah fallback
+        userLng = 39.1728;
+        placeCreatures();
+      }
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
+  );
+}
 
-    // Play animations if any
-    if (gltf.animations && gltf.animations.length > 0) {
-      const mixer = new THREE.AnimationMixer(mvModel);
-      gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-      const clock = new THREE.Clock();
-      const animLoop = () => {
-        requestAnimationFrame(animLoop);
-        mixer.update(clock.getDelta());
-      };
-      animLoop();
+function placeCreatures() {
+  Object.keys(creatureOffsets).forEach(id => {
+    const off = creatureOffsets[id];
+    const lat = userLat + off.dLat;
+    const lng = userLng + off.dLng;
+
+    const entityId = id === 'fish' ? 'ar-fish' : 'ar-shark';
+    const entity = document.getElementById(entityId);
+    if (entity) {
+      entity.setAttribute('gps-new-entity-place', `latitude:${lat}; longitude:${lng}`);
     }
-
-    mvSpherical = { theta: 0.3, phi: 1.2, radius: 4 };
-    updateMVCamera();
-  }, undefined, (err) => console.error('Model load error:', err));
+  });
 }
 
-function loadGLTFViaImport(modelPath, baseScale) {
-  // Dynamic import fallback for GLTFLoader
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
-  script.onload = () => loadModelInViewer(modelPath, baseScale);
-  document.head.appendChild(script);
+function updateCreatureLocations() {
+  // Use reverse geocoding via nominatim to get area name
+  fetch(`https://nominatim.openstreetmap.org/reverse?lat=${userLat}&lon=${userLng}&format=json`)
+    .then(r => r.json())
+    .then(data => {
+      const addr = data.address;
+      const area = addr.suburb || addr.neighbourhood || addr.city_district || addr.city || addr.town || 'your area';
+      const country = addr.country || '';
+
+      Object.keys(CREATURES).forEach(id => {
+        const locEl = document.getElementById(CREATURES[id].loc);
+        if (locEl) {
+          locEl.textContent = `Near ${area}, ${country}`;
+        }
+      });
+    })
+    .catch(() => {
+      // Fallback: show coordinates
+      Object.keys(CREATURES).forEach(id => {
+        const locEl = document.getElementById(CREATURES[id].loc);
+        if (locEl) locEl.textContent = `${userLat.toFixed(4)}°N, ${userLng.toFixed(4)}°E`;
+      });
+    });
 }
 
-function setupMVControls(canvas) {
-  // Mouse
-  canvas.addEventListener('mousedown', e => { mvDragging = true; mvDragMoved = false; });
-  window.addEventListener('mouseup', () => { mvDragging = false; });
-  window.addEventListener('mousemove', e => {
-    if (!mvDragging) return;
-    mvDragMoved = true;
-    mvSpherical.theta -= e.movementX * 0.008;
-    mvSpherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, mvSpherical.phi - e.movementY * 0.008));
+// ══════════════════════════════════════════════
+//  CREATURE INTERACTION
+// ══════════════════════════════════════════════
+function setupCreatureInteraction() {
+  ['ar-fish', 'ar-shark'].forEach(entityId => {
+    const el = document.getElementById(entityId);
+    if (!el) return;
+    const creatureId = entityId === 'ar-fish' ? 'fish' : 'shark';
+
+    el.addEventListener('click', (e) => {
+      triggerTapRipple(e.clientX || window.innerWidth/2, e.clientY || window.innerHeight/2);
+      toggleLabel(creatureId, el);
+    });
+
+    el.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      const t = e.changedTouches[0];
+      triggerTapRipple(t.clientX, t.clientY);
+      toggleLabel(creatureId, el);
+    }, { passive: true });
   });
 
-  // Touch drag
-  canvas.addEventListener('touchstart', e => {
-    if (e.touches.length === 1) { mvDragging = true; mvDragMoved = false; mvPrevTouch = e.touches[0]; }
-  }, { passive: true });
-  window.addEventListener('touchend', () => { mvDragging = false; mvPrevTouch = null; }, { passive: true });
-  window.addEventListener('touchmove', e => {
-    if (!mvDragging || e.touches.length !== 1) return;
-    const t = e.touches[0];
-    const dx = t.clientX - mvPrevTouch.clientX;
-    const dy = t.clientY - mvPrevTouch.clientY;
-    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) mvDragMoved = true;
-    mvPrevTouch = t;
-    mvSpherical.theta -= dx * 0.008;
-    mvSpherical.phi = Math.max(0.2, Math.min(Math.PI - 0.2, mvSpherical.phi - dy * 0.008));
-  }, { passive: true });
-
-  // Pinch zoom
-  let lastPinch = 0;
-  canvas.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
-      const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-      if (lastPinch) mvSpherical.radius = Math.max(1.5, Math.min(8, mvSpherical.radius - (d - lastPinch) * 0.015));
-      lastPinch = d;
-    } else lastPinch = 0;
-  }, { passive: true });
-
-  // Scroll zoom
-  canvas.addEventListener('wheel', e => {
-    mvSpherical.radius = Math.max(1.5, Math.min(8, mvSpherical.radius + e.deltaY * 0.005));
-  }, { passive: true });
+  // Click elsewhere to dismiss all labels
+  document.getElementById('arScene').addEventListener('click', (e) => {
+    const tag = e.target.tagName.toLowerCase();
+    if (tag !== 'a-entity') dismissAllLabels();
+  });
 }
 
-function updateMVCamera() {
-  if (!mvCamera) return;
-  mvCamera.position.set(
-    mvSpherical.radius * Math.sin(mvSpherical.phi) * Math.sin(mvSpherical.theta),
-    mvSpherical.radius * Math.cos(mvSpherical.phi),
-    mvSpherical.radius * Math.sin(mvSpherical.phi) * Math.cos(mvSpherical.theta)
-  );
-  mvCamera.lookAt(0, 0, 0);
+// ══════════════════════════════════════════════
+//  FLOATING LABEL POSITIONING
+// ══════════════════════════════════════════════
+function toggleLabel(id, entity) {
+  const isOpen = activeLabels[id];
+
+  // Close all first
+  dismissAllLabels();
+
+  if (!isOpen) {
+    activeLabels[id] = true;
+    const labelEl = document.getElementById(CREATURES[id].label);
+    labelEl.classList.add('visible');
+    // Position label above creature's screen position
+    positionLabel(id, entity);
+    // Keep updating position as camera moves
+    startLabelTracking(id, entity);
+  }
 }
 
-// Close model viewer
-document.getElementById('mvCloseBtn').addEventListener('click', () => {
-  document.getElementById('modelViewer').classList.remove('active');
-  closeInfoCard();
-});
-
-// Learn More button → show info card
-document.getElementById('mvInfoBtn').addEventListener('click', () => {
-  showInfoCard(currentCreature);
-});
-
-// ══════════════════════════════════════════
-//  INFO CARD
-// ══════════════════════════════════════════
-function showInfoCard(id) {
-  const d = CREATURES[id];
-  if (!d) return;
-  document.getElementById('cName').textContent    = d.name;
-  document.getElementById('cSci').textContent     = d.sciName;
-  document.getElementById('cEmoji').textContent   = d.emoji;
-  document.getElementById('cHabitat').textContent = d.habitat;
-  document.getElementById('cDiet').textContent    = d.diet;
-  document.getElementById('cDepth').textContent   = d.depth;
-  document.getElementById('cStatus').textContent  = d.status;
-  document.getElementById('cFact').textContent    = d.fact;
-  document.getElementById('infoCard').classList.add('visible');
-  infoOpen = true;
+function dismissAllLabels() {
+  Object.keys(CREATURES).forEach(id => {
+    activeLabels[id] = false;
+    const labelEl = document.getElementById(CREATURES[id].label);
+    labelEl.classList.remove('visible');
+    stopLabelTracking(id);
+  });
 }
 
-function closeInfoCard() {
-  document.getElementById('infoCard').classList.remove('visible');
-  infoOpen = false;
+const trackingIntervals = {};
+
+function startLabelTracking(id, entity) {
+  stopLabelTracking(id);
+  trackingIntervals[id] = setInterval(() => {
+    if (!activeLabels[id]) return;
+    positionLabel(id, entity);
+  }, 50);
 }
 
-document.getElementById('closeInfoBtn').addEventListener('click', closeInfoCard);
+function stopLabelTracking(id) {
+  if (trackingIntervals[id]) {
+    clearInterval(trackingIntervals[id]);
+    delete trackingIntervals[id];
+  }
+}
 
+function positionLabel(id, entity) {
+  const labelEl = document.getElementById(CREATURES[id].label);
+  if (!labelEl || !activeLabels[id]) return;
+
+  // Project 3D entity position to 2D screen
+  const screenPos = getEntityScreenPosition(entity);
+  if (!screenPos) return;
+
+  // Place label above the creature
+  labelEl.style.left = screenPos.x + 'px';
+  labelEl.style.top  = (screenPos.y - 20) + 'px';
+}
+
+function getEntityScreenPosition(entity) {
+  try {
+    const camera = document.querySelector('[gps-new-camera]');
+    if (!camera || !entity) return null;
+
+    const camComp = camera.components && camera.components.camera;
+    if (!camComp) return fallbackCenter();
+
+    const threeCamera = camComp.camera;
+    const scene3D = entity.sceneEl && entity.sceneEl.object3D;
+    if (!threeCamera || !scene3D) return fallbackCenter();
+
+    const THREE = window.THREE || entity.sceneEl.systems.renderer.renderer.domElement.__THREE__;
+    if (!THREE) return fallbackCenter();
+
+    // Get world position of entity
+    const entityObj = entity.object3D;
+    const worldPos = new THREE.Vector3();
+    entityObj.getWorldPosition(worldPos);
+
+    // Project to screen
+    worldPos.project(threeCamera);
+
+    const x = (worldPos.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-worldPos.y * 0.5 + 0.5) * window.innerHeight;
+
+    // Check if behind camera
+    if (worldPos.z > 1) return null;
+
+    return { x, y };
+  } catch(e) {
+    return fallbackCenter();
+  }
+}
+
+function fallbackCenter() {
+  return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+}
+
+// ══════════════════════════════════════════════
+//  TAP RIPPLE EFFECT
+// ══════════════════════════════════════════════
+function triggerTapRipple(x, y) {
+  const ripple = document.createElement('div');
+  ripple.className = 'tap-ripple';
+  ripple.style.left = x + 'px';
+  ripple.style.top  = y + 'px';
+  document.body.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 700);
+}
 </script>
-
-<!-- GLTFLoader -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
 </body>
 </html>
