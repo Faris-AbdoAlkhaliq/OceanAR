@@ -111,13 +111,7 @@
     }
 
     /* Bottom controls */
-    .vfooter {
-      position:absolute; bottom:0; left:0; right:0; z-index:20;
-      padding:1rem 1.2rem 2rem;
-      display:flex; flex-direction:column; align-items:center; gap:0.7rem;
-      background:linear-gradient(to top, rgba(2,12,24,0.85), transparent);
-      pointer-events:none;
-    }
+
 
     .vhint {
       font-size:0.5rem; letter-spacing:0.15em; text-transform:uppercase;
@@ -136,6 +130,15 @@
       box-shadow:0 0 30px rgba(0,255,231,0.35);
       width:min(340px, 90vw);
       justify-content:center;
+      position:relative; z-index:30;
+    }
+
+    .vfooter {
+      position:absolute; bottom:0; left:0; right:0; z-index:20;
+      padding:0.8rem 1.2rem 2rem;
+      display:flex; flex-direction:column; align-items:center; gap:0.6rem;
+      background:linear-gradient(to top, rgba(2,12,24,0.9) 60%, transparent);
+      pointer-events:none;
     }
 
     /* Info tap hint */
@@ -259,16 +262,15 @@
     ar-scale="auto"
     xr-environment
   >
-    <!-- Custom AR button inside model-viewer slot -->
-    <button slot="ar-button" id="arBtn">
-      📷 &nbsp; Place Shark in Your World
-    </button>
-
+    <button slot="ar-button" style="display:none"></button>
   </model-viewer>
 
   <div class="vfooter">
     <div class="vhint">Drag to rotate · Pinch to zoom</div>
     <div id="tapHint">Tap the shark to learn about it</div>
+    <button id="arBtn" onclick="document.getElementById('mv').activateAR()">
+      📷 &nbsp; Place Shark in Your World
+    </button>
     <div id="noArMsg">AR not supported on this browser.<br>You can still explore the 3D model above.</div>
   </div>
 
