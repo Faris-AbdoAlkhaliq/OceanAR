@@ -3,54 +3,28 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>OceanAR — Immersive Sea Experience</title>
+  <title>OceanAR</title>
 
-  <!-- Google Model Viewer -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
 
     :root {
-      --deep:  #020c18;
-      --ocean: #0a2540;
-      --teal:  #1ab3c8;
-      --foam:  #a8f0f5;
-      --glow:  #00ffe7;
-      --text:  #d8f4f7;
+      --deep: #020c18;
+      --teal: #1ab3c8;
+      --foam: #a8f0f5;
+      --glow: #00ffe7;
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Space Mono',monospace; background:var(--deep); color:var(--text); overflow:hidden; height:100vh; width:100vw; }
+    body { font-family:'Space Mono',monospace; background:var(--deep); color:var(--foam); overflow:hidden; }
+    .a-enter-vr, .a-enter-vr-button { display:none !important; }
 
-    /* ══════════════════════════════
-       LOADING
-    ══════════════════════════════ */
-    #loading {
-      position:fixed; inset:0; z-index:3000; background:var(--deep);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem;
-      transition:opacity 0.6s ease;
-    }
-    #loading.hidden { opacity:0; pointer-events:none; }
-    .fish-swim { font-size:2.5rem; animation:swim 1s ease infinite alternate; }
-    @keyframes swim { from{transform:translateX(-22px) rotate(-5deg)} to{transform:translateX(22px) rotate(5deg)} }
-    .load-label { font-size:0.58rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--teal); }
-    .load-track { width:140px; height:1px; background:rgba(26,179,200,0.15); position:relative; overflow:hidden; }
-    .load-track::after {
-      content:''; position:absolute; inset:0; background:var(--glow); animation:fill 1.5s ease infinite;
-    }
-    @keyframes fill {
-      0%{transform:scaleX(0);transform-origin:left}
-      50%{transform:scaleX(1);transform-origin:left}
-      51%{transform:scaleX(1);transform-origin:right}
-      100%{transform:scaleX(0);transform-origin:right}
-    }
-
-    /* ══════════════════════════════
-       SPLASH
-    ══════════════════════════════ */
+    /* ── SPLASH ── */
     #splash {
-      position:fixed; inset:0; z-index:2000;
+      position:fixed; inset:0; z-index:999;
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       background:radial-gradient(ellipse at 50% 65%, #0a3a5a 0%, #020c18 70%);
       transition:opacity 0.7s ease;
@@ -63,212 +37,117 @@
       background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(26,179,200,0.07));
       border:1px solid rgba(26,179,200,0.2); animation:rise linear infinite;
     }
-    @keyframes rise { to{transform:translateY(-110vh);opacity:0;} }
+    @keyframes rise { to { transform:translateY(-110vh); opacity:0; } }
 
-    .splash-inner { position:relative; z-index:2; text-align:center; padding:2rem; max-width:400px; }
+    .splash-inner { position:relative; z-index:2; text-align:center; padding:2rem; max-width:380px; }
     .eyebrow { font-size:0.6rem; letter-spacing:0.35em; color:var(--teal); text-transform:uppercase; margin-bottom:1rem; opacity:0.8; }
     .s-title {
       font-family:'Cormorant Garamond',serif;
       font-size:clamp(3rem,11vw,6rem); font-weight:300; line-height:0.95;
-      color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.2); margin-bottom:0.3rem;
+      color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.2); margin-bottom:0.4rem;
     }
     .s-title em { font-style:italic; color:var(--glow); }
     .s-sub {
-      font-family:'Cormorant Garamond',serif; font-size:clamp(0.9rem,2.5vw,1.15rem);
+      font-family:'Cormorant Garamond',serif; font-size:1.1rem;
       font-style:italic; color:rgba(168,240,245,0.5); margin-bottom:2rem;
     }
-    #exploreBtn {
+    .creature-pill {
+      display:inline-flex; align-items:center; gap:0.5rem;
+      border:1px solid rgba(26,179,200,0.25); padding:0.5rem 1rem;
+      font-size:0.6rem; letter-spacing:0.1em; color:var(--teal);
+      text-transform:uppercase; margin-bottom:2rem;
+      background:rgba(26,179,200,0.05);
+    }
+    #startBtn {
       position:relative; overflow:hidden; background:transparent;
       border:1.5px solid var(--glow); color:var(--glow);
       font-family:'Space Mono',monospace; font-size:0.7rem;
       letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.5rem; cursor:pointer; transition:color 0.3s;
+      padding:0.9rem 2.5rem; cursor:pointer; transition:color 0.3s; display:block; width:100%;
     }
-    #exploreBtn::before {
+    #startBtn::before {
       content:''; position:absolute; inset:0; background:var(--glow);
       transform:scaleX(0); transform-origin:left; transition:transform 0.3s; z-index:-1;
     }
-    #exploreBtn:hover { color:var(--deep); }
-    #exploreBtn:hover::before { transform:scaleX(1); }
+    #startBtn:hover { color:var(--deep); }
+    #startBtn:hover::before { transform:scaleX(1); }
     .s-note { margin-top:1rem; font-size:0.5rem; line-height:2; color:rgba(168,240,245,0.25); }
     .s-note span { color:var(--teal); }
 
-    /* ══════════════════════════════
-       CREATURE SELECTION SCREEN
-    ══════════════════════════════ */
-    #selectScreen {
-      position:fixed; inset:0; z-index:1800;
-      display:none; flex-direction:column;
-      background:var(--deep);
-      overflow-y:auto;
+    /* ── HUD ── */
+    #hud {
+      position:fixed; inset:0; z-index:100;
+      pointer-events:none; display:none;
     }
-    #selectScreen.show { display:flex; }
+    #hud.active { display:block; }
 
-    .select-header {
-      padding:1.5rem 1.5rem 0;
-      background:linear-gradient(to bottom, rgba(2,12,24,1), transparent);
-      position:sticky; top:0; z-index:2;
-    }
-    .select-eyebrow { font-size:0.55rem; letter-spacing:0.3em; color:var(--teal); text-transform:uppercase; margin-bottom:0.3rem; opacity:0.7; }
-    .select-title { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--foam); margin-bottom:1.2rem; }
-    .select-title em { font-style:italic; color:var(--glow); }
-
-    .creature-list { padding:1rem 1.5rem 2rem; display:flex; flex-direction:column; gap:1rem; }
-
-    .creature-card {
-      background:linear-gradient(135deg, rgba(10,37,64,0.8), rgba(2,12,24,0.9));
-      border:1px solid rgba(26,179,200,0.2); border-radius:2px; overflow:hidden;
-      cursor:pointer; transition:all 0.3s ease; position:relative;
-    }
-    .creature-card:hover, .creature-card:active {
-      border-color:rgba(0,255,231,0.5);
-      box-shadow:0 0 30px rgba(0,255,231,0.08);
-      transform:translateY(-2px);
-    }
-    .card-accent-bar { height:2px; }
-
-    .card-content { display:flex; align-items:center; gap:1rem; padding:1.1rem; }
-    .card-emoji-big { font-size:3rem; filter:drop-shadow(0 0 12px rgba(0,255,231,0.3)); flex-shrink:0; }
-
-    .card-info { flex:1; }
-    .card-name { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:300; color:var(--foam); line-height:1; margin-bottom:0.15rem; }
-    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.7rem; font-style:italic; color:rgba(168,240,245,0.4); margin-bottom:0.5rem; }
-    .card-tags { display:flex; gap:0.4rem; flex-wrap:wrap; }
-    .tag {
-      font-size:0.45rem; letter-spacing:0.12em; text-transform:uppercase;
-      padding:0.2rem 0.5rem; border-radius:10px;
-      background:rgba(26,179,200,0.08); border:1px solid rgba(26,179,200,0.2); color:var(--teal);
-    }
-
-    .card-arrow { font-size:1.2rem; color:rgba(0,255,231,0.4); flex-shrink:0; }
-
-    /* ══════════════════════════════
-       3D PREVIEW + AR SCREEN
-    ══════════════════════════════ */
-    #viewerScreen {
-      position:fixed; inset:0; z-index:1600;
-      display:none; flex-direction:column;
-      background:var(--deep);
-    }
-    #viewerScreen.show { display:flex; }
-
-    .viewer-header {
-      position:absolute; top:0; left:0; right:0; z-index:10;
-      padding:1rem 1.2rem;
+    .hud-top {
+      position:absolute; top:0; left:0; right:0; padding:1.2rem 1.5rem;
       display:flex; justify-content:space-between; align-items:center;
-      background:linear-gradient(to bottom, rgba(2,12,24,0.9), transparent);
+      background:linear-gradient(to bottom, rgba(2,12,24,0.8), transparent);
     }
-    .back-btn {
-      background:transparent; border:1px solid rgba(168,240,245,0.2);
-      color:rgba(168,240,245,0.5); font-family:'Space Mono',monospace;
-      font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase;
-      padding:0.5rem 0.9rem; cursor:pointer; transition:all 0.2s;
-    }
-    .back-btn:hover { border-color:var(--teal); color:var(--teal); }
-    .viewer-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--foam); }
+    .hud-logo { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:300; color:var(--foam); }
+    .hud-logo span { color:var(--glow); font-style:italic; }
+    .hud-badge { font-size:0.48rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--teal); display:flex; align-items:center; gap:0.4rem; }
+    .dot { width:5px; height:5px; border-radius:50%; background:var(--glow); box-shadow:0 0 6px var(--glow); animation:pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    /* model-viewer fills screen */
-    #mv {
-      width:100%; flex:1;
-      --progress-bar-color: var(--glow);
-      --progress-mask: transparent;
-      background:radial-gradient(ellipse at 50% 60%, #0a2a4a 0%, #020c18 70%);
-    }
-
-    /* custom AR button */
-    #arBtn {
+    .hud-hint {
       position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      background:var(--glow); color:var(--deep);
-      font-family:'Space Mono',monospace; font-size:0.65rem;
-      letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.2rem; border:none; cursor:pointer; font-weight:700;
-      display:flex; align-items:center; gap:0.6rem;
-      box-shadow:0 0 30px rgba(0,255,231,0.3);
-      z-index:10;
+      font-size:0.52rem; letter-spacing:0.15em; text-transform:uppercase;
+      color:rgba(168,240,245,0.45); white-space:nowrap; animation:fadePulse 3s infinite;
     }
-    #arBtn .ar-icon { font-size:1rem; }
+    @keyframes fadePulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
 
-    .viewer-hint {
-      position:absolute; bottom:5.5rem; left:50%; transform:translateX(-50%);
-      font-size:0.5rem; letter-spacing:0.15em; text-transform:uppercase;
-      color:rgba(168,240,245,0.3); white-space:nowrap; pointer-events:none; z-index:10;
+    /* ── INFO CARD ── */
+    #infoCard {
+      position:fixed; bottom:-100%; left:50%; transform:translateX(-50%);
+      width:min(400px, 92vw); z-index:200; pointer-events:all;
+      transition:bottom 0.45s cubic-bezier(0.16,1,0.3,1);
     }
+    #infoCard.visible { bottom:1.5rem; }
 
-    /* ══════════════════════════════
-       FLOATING INFO LABEL
-       (shown in AR via model-viewer slot)
-    ══════════════════════════════ */
-    #floatLabel {
-      position:absolute;
-      bottom:calc(50% + 60px);
-      left:50%; transform:translateX(-50%);
-      z-index:20; pointer-events:none;
-      display:none; flex-direction:column; align-items:center;
-      animation:labelIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
+    .card-wrap {
+      background:linear-gradient(135deg, rgba(10,37,64,0.97), rgba(2,12,24,0.97));
+      border:1px solid rgba(26,179,200,0.25);
+      overflow:hidden; backdrop-filter:blur(20px);
+      box-shadow:0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(0,255,231,0.05);
     }
-    #floatLabel.visible { display:flex; }
-
-    @keyframes labelIn {
-      from { opacity:0; transform:translateX(-50%) translateY(20px); }
-      to   { opacity:1; transform:translateX(-50%) translateY(0); }
+    .card-top-bar { height:3px; background:linear-gradient(90deg, var(--glow), var(--teal), transparent); }
+    .card-body { padding:1.4rem; }
+    .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.9rem; }
+    .card-name { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--foam); line-height:1; }
+    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.78rem; font-style:italic; color:rgba(168,240,245,0.4); margin-top:0.2rem; }
+    .card-emoji { font-size:2.5rem; filter:drop-shadow(0 0 10px rgba(0,255,231,0.4)); }
+    .card-hr { height:1px; background:linear-gradient(90deg, rgba(26,179,200,0.3), transparent); margin-bottom:0.9rem; }
+    .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; margin-bottom:0.9rem; }
+    .stat label { display:block; font-size:0.46rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); margin-bottom:0.15rem; }
+    .stat value { font-size:0.68rem; color:var(--foam); line-height:1.4; }
+    .fact-box { background:rgba(0,255,231,0.04); border-left:2px solid var(--glow); padding:0.7rem 0.9rem; margin-bottom:1.1rem; }
+    .fact-label { font-size:0.46rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--glow); margin-bottom:0.25rem; }
+    .fact-text { font-family:'Cormorant Garamond',serif; font-size:0.9rem; font-style:italic; color:rgba(168,240,245,0.8); line-height:1.5; }
+    #closeBtn {
+      width:100%; background:transparent; border:1px solid rgba(26,179,200,0.2);
+      color:rgba(168,240,245,0.4); font-family:'Space Mono',monospace;
+      font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase;
+      padding:0.65rem; cursor:pointer; transition:all 0.2s; pointer-events:all;
     }
-
-    .fl-card {
-      background:rgba(2,12,24,0.92);
-      border:1px solid rgba(0,255,231,0.4);
-      backdrop-filter:blur(20px);
-      padding:1rem 1.2rem;
-      min-width:220px; max-width:280px;
-      text-align:center;
-      box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0,255,231,0.1);
-    }
-    .fl-emoji  { font-size:1.8rem; display:block; margin-bottom:0.4rem; filter:drop-shadow(0 0 8px rgba(0,255,231,0.4)); }
-    .fl-name   { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:300; color:var(--foam); line-height:1; margin-bottom:0.1rem; }
-    .fl-sci    { font-family:'Cormorant Garamond',serif; font-size:0.65rem; font-style:italic; color:rgba(168,240,245,0.4); margin-bottom:0.6rem; }
-    .fl-hr     { height:1px; background:linear-gradient(90deg,transparent,rgba(0,255,231,0.35),transparent); margin-bottom:0.6rem; }
-    .fl-fact   { font-size:0.58rem; line-height:1.8; color:rgba(168,240,245,0.75); margin-bottom:0.6rem; letter-spacing:0.03em; }
-    .fl-loc-row{ display:flex; align-items:center; justify-content:center; gap:0.3rem; margin-bottom:0.6rem; }
-    .fl-loc-icon{ font-size:0.7rem; }
-    .fl-loc    { font-size:0.48rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal); }
-    .fl-close  {
-      font-size:0.48rem; letter-spacing:0.15em; text-transform:uppercase;
-      color:rgba(168,240,245,0.3); cursor:pointer; pointer-events:all;
-      border:1px solid rgba(168,240,245,0.1); padding:0.3rem 0.7rem;
-      transition:all 0.2s;
-    }
-    .fl-close:hover { color:var(--teal); border-color:var(--teal); }
-
-    .fl-line { width:1px; height:24px; background:linear-gradient(to bottom, rgba(0,255,231,0.4), transparent); }
-    .fl-dot  { width:7px; height:7px; border-radius:50%; background:var(--glow); box-shadow:0 0 8px var(--glow); margin-top:-2px; }
+    #closeBtn:hover { border-color:var(--teal); color:var(--teal); }
 
     /* tap ripple */
     .ripple {
-      position:fixed; width:55px; height:55px; border-radius:50%;
-      border:2px solid var(--glow); pointer-events:none; z-index:500;
+      position:fixed; width:60px; height:60px; border-radius:50%;
+      border:2px solid var(--glow); pointer-events:none; z-index:300;
       transform:translate(-50%,-50%) scale(0);
-      animation:rippleOut 0.65s ease forwards;
+      animation:rippleOut 0.6s ease forwards;
     }
     @keyframes rippleOut {
       0%  { transform:translate(-50%,-50%) scale(0);   opacity:1; }
-      100%{ transform:translate(-50%,-50%) scale(2.8); opacity:0; }
-    }
-
-    /* no-ar fallback */
-    .no-ar-note {
-      position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      font-size:0.5rem; letter-spacing:0.1em; color:rgba(168,240,245,0.25);
-      text-align:center; max-width:260px; line-height:1.8; z-index:10;
+      100%{ transform:translate(-50%,-50%) scale(2.5); opacity:0; }
     }
   </style>
 </head>
 <body>
-
-<!-- ── LOADING ── -->
-<div id="loading">
-  <div class="fish-swim">🌊</div>
-  <div class="load-label">Preparing the ocean</div>
-  <div class="load-track"></div>
-</div>
 
 <!-- ── SPLASH ── -->
 <div id="splash">
@@ -276,308 +155,182 @@
   <div class="splash-inner">
     <p class="eyebrow">CPIS360 — Immersive AR Experience</p>
     <h1 class="s-title">Ocean<em>AR</em></h1>
-    <p class="s-sub">Real sea creatures floating in your world</p>
-    <button id="exploreBtn">Explore the Ocean</button>
+    <p class="s-sub">Real sea creatures in your world</p>
+    <div class="creature-pill">
+      <span>🦈</span> Swimming Shark
+    </div>
+    <button id="startBtn">Launch AR Experience</button>
     <p class="s-note">
-      Works on <span>iOS Safari</span> &amp; <span>Android Chrome</span>.<br>
-      No app needed — just your browser &amp; camera.<br>
-      Tap a creature to place it in your real space.
+      Works on <span>iOS Safari</span> &amp; <span>Android Chrome</span><br>
+      Allow camera access when prompted<br>
+      Tap the shark to learn about it
     </p>
   </div>
 </div>
 
-<!-- ── CREATURE SELECTION ── -->
-<div id="selectScreen">
-  <div class="select-header">
-    <p class="select-eyebrow">Choose your encounter</p>
-    <h2 class="select-title">Which creature will you <em>meet</em>?</h2>
+<!-- ── HUD ── -->
+<div id="hud">
+  <div class="hud-top">
+    <div class="hud-logo">Ocean<span>AR</span></div>
+    <div class="hud-badge"><div class="dot"></div>AR Live</div>
   </div>
-  <div class="creature-list" id="creatureList">
-    <!-- cards injected by JS -->
-  </div>
+  <div class="hud-hint" id="hudHint">Tap the shark to learn about it</div>
 </div>
 
-<!-- ── 3D VIEWER + AR ── -->
-<div id="viewerScreen">
-  <div class="viewer-header">
-    <button class="back-btn" id="backBtn">← Back</button>
-    <div class="viewer-title" id="viewerTitle">School of Fish</div>
-  </div>
-
-  <!-- model-viewer: handles 3D preview + native AR -->
-  <model-viewer
-    id="mv"
-    src=""
-    alt="Sea creature"
-    shadow-intensity="1"
-    camera-controls
-    touch-action="pan-y"
-    auto-rotate
-    auto-rotate-delay="500"
-    rotation-per-second="20deg"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    ar-scale="auto"
-    xr-environment
-  >
-    <!-- custom AR button slot -->
-    <button slot="ar-button" id="arBtn">
-      <span class="ar-icon">📷</span> Place in Your World
-    </button>
-
-    <!-- floating label shown on tap (inside model-viewer for AR overlay) -->
-    <div id="floatLabel" slot="hotspot-0">
-      <div class="fl-card">
-        <span class="fl-emoji" id="flEmoji">🐠</span>
-        <div class="fl-name"  id="flName">School of Fish</div>
-        <div class="fl-sci"   id="flSci">Atheriniformes spp.</div>
-        <div class="fl-hr"></div>
-        <div class="fl-fact"  id="flFact">Loading…</div>
-        <div class="fl-loc-row">
-          <span class="fl-loc-icon">📍</span>
-          <span class="fl-loc" id="flLoc">Locating…</span>
+<!-- ── INFO CARD ── -->
+<div id="infoCard">
+  <div class="card-wrap">
+    <div class="card-top-bar"></div>
+    <div class="card-body">
+      <div class="card-header">
+        <div>
+          <div class="card-name">Swimming Shark</div>
+          <div class="card-sci">Carcharhinus sp.</div>
         </div>
-        <div class="fl-close" id="flClose">✕ Dismiss</div>
+        <div class="card-emoji">🦈</div>
       </div>
-      <div class="fl-line"></div>
-      <div class="fl-dot"></div>
+      <div class="card-hr"></div>
+      <div class="card-grid">
+        <div class="stat"><label>Habitat</label><value>Open Ocean &amp; Coastal Waters</value></div>
+        <div class="stat"><label>Diet</label><value>Fish, Rays, Marine Mammals</value></div>
+        <div class="stat"><label>Depth</label><value>0–600 m</value></div>
+        <div class="stat"><label>Conservation</label><value>Vulnerable</value></div>
+      </div>
+      <div class="fact-box">
+        <div class="fact-label">✦ Did You Know</div>
+        <div class="fact-text">Sharks have electroreceptors called the Ampullae of Lorenzini — they can detect the faint electrical field produced by the heartbeat of hidden prey up to 1 metre away.</div>
+      </div>
+      <button id="closeBtn">— Dismiss —</button>
     </div>
-
-  </model-viewer>
-
-  <div class="viewer-hint">Drag to rotate · Pinch to zoom · Tap creature for info</div>
-  <div class="no-ar-note" id="noArNote" style="display:none">
-    AR not available on this device/browser.<br>
-    You can still explore the 3D model above.
   </div>
 </div>
+
+<!-- ── A-FRAME SCENE ── -->
+<a-scene
+  id="arScene"
+  embedded
+  arjs="sourceType:webcam; debugUIEnabled:false; trackingMethod:best;"
+  renderer="antialias:true; alpha:true; logarithmicDepthBuffer:true;"
+  vr-mode-ui="enabled:false"
+  style="display:none; position:fixed; inset:0; z-index:50;"
+>
+  <a-assets timeout="60000">
+    <a-asset-item id="sharkModel" src="models/swimming_shark.glb"></a-asset-item>
+  </a-assets>
+
+  <!--
+    Markerless: creature placed in front of camera using
+    a-camera + device orientation. The entity is placed
+    at a fixed position in world space relative to the camera.
+  -->
+  <a-entity
+    id="sharkEntity"
+    gltf-model="#sharkModel"
+    scale="0.5 0.5 0.5"
+    position="0 0 -3"
+    animation-mixer
+    class="clickable"
+  ></a-entity>
+
+  <!-- Lights -->
+  <a-light type="ambient"     color="#88ccff" intensity="1.2"></a-light>
+  <a-light type="directional" color="#ffffff" intensity="0.8" position="1 3 2"></a-light>
+  <a-light type="point"       color="#1ab3c8" intensity="0.6" position="0 2 -2"></a-light>
+
+  <a-camera
+    id="arCamera"
+    look-controls="enabled:true"
+    arjs-look-controls="smoothingFactor:0.1"
+    gps-camera="simulateAltitude:0"
+    rotation-reader
+  ></a-camera>
+
+</a-scene>
 
 <script>
-// ══════════════════════════════════════════════════
-//  CREATURE DATABASE
-// ══════════════════════════════════════════════════
-const CREATURES = [
-  {
-    id: 'fish',
-    name: 'School of Fish',
-    sciName: 'Atheriniformes spp.',
-    emoji: '🐠',
-    color: '#ff6b35',
-    modelSrc: 'models/school_of_fish.glb',
-    iosSrc: '',           // add .usdz path here if you have one
-    habitat: 'Coral Reefs, Open Ocean',
-    diet: 'Plankton, Small Invertebrates',
-    depth: '0–200 m',
-    status: 'Least Concern',
-    tags: ['Coral Reef', 'Schooling', 'Indo-Pacific'],
-    fact: 'Fish school in tight formations to confuse predators — the group moves as one living organism, making it nearly impossible to target a single fish.',
-    naturalHabitat: 'Indo-Pacific Coral Reefs'
-  },
-  {
-    id: 'shark',
-    name: 'Swimming Shark',
-    sciName: 'Carcharhinus sp.',
-    emoji: '🦈',
-    color: '#607d8b',
-    modelSrc: 'models/swimming_shark.glb',
-    iosSrc: '',
-    habitat: 'Open Ocean, Coastal Waters',
-    diet: 'Fish, Rays, Marine Mammals',
-    depth: '0–600 m',
-    status: 'Vulnerable',
-    tags: ['Apex Predator', 'Open Ocean', 'Ancient'],
-    fact: 'Sharks have electroreceptors called the Ampullae of Lorenzini — they can detect the faint electrical field produced by the heartbeat of hidden prey.',
-    naturalHabitat: 'Warm Coastal & Open Oceans Worldwide'
-  }
-];
-
-let currentCreature = null;
-let labelVisible = false;
-let userLocation = 'Locating…';
-
-// ══════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════
+// ══════════════════════════════════════
+//  BUBBLES
+// ══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
-  makeBubbles();
-  buildCreatureCards();
-  startLocationFetch();
-  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1500);
-});
-
-function makeBubbles() {
   const el = document.getElementById('bubblesEl');
-  for (let i = 0; i < 22; i++) {
+  for (let i = 0; i < 20; i++) {
     const b = document.createElement('div');
     b.className = 'bubble';
     const s = Math.random()*26+8;
     b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*8+6}s;animation-delay:${Math.random()*8}s;opacity:${Math.random()*0.3+0.07};`;
     el.appendChild(b);
   }
-}
+});
 
-// ══════════════════════════════════════════════════
-//  BUILD CREATURE CARDS
-// ══════════════════════════════════════════════════
-function buildCreatureCards() {
-  const list = document.getElementById('creatureList');
-  CREATURES.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'creature-card';
-    card.innerHTML = `
-      <div class="card-accent-bar" style="background:${c.color}"></div>
-      <div class="card-content">
-        <div class="card-emoji-big">${c.emoji}</div>
-        <div class="card-info">
-          <div class="card-name">${c.name}</div>
-          <div class="card-sci">${c.sciName}</div>
-          <div class="card-tags">
-            ${c.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-          </div>
-        </div>
-        <div class="card-arrow">→</div>
-      </div>
-    `;
-    card.addEventListener('click', () => openViewer(c));
-    list.appendChild(card);
+// ══════════════════════════════════════
+//  START
+// ══════════════════════════════════════
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('splash').classList.add('hidden');
+
+  const scene = document.getElementById('arScene');
+  scene.style.display = 'block';
+  document.getElementById('hud').classList.add('active');
+
+  // Wait for scene to load then setup interaction
+  scene.addEventListener('loaded', setupInteraction);
+  // Fallback if already loaded
+  if (scene.hasLoaded) setupInteraction();
+});
+
+// ══════════════════════════════════════
+//  INTERACTION
+// ══════════════════════════════════════
+let infoOpen = false;
+
+function setupInteraction() {
+  const shark = document.getElementById('sharkEntity');
+  if (!shark) return;
+
+  // Click / tap on the shark entity
+  shark.addEventListener('click', (e) => {
+    spawnRipple(e.clientX || window.innerWidth/2, e.clientY || window.innerHeight/2);
+    toggleInfo();
+  });
+
+  // Touch fallback
+  shark.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+    const t = e.changedTouches[0];
+    spawnRipple(t.clientX, t.clientY);
+    toggleInfo();
+  }, { passive: true });
+
+  // Tap elsewhere = dismiss
+  document.getElementById('arScene').addEventListener('click', (e) => {
+    if (e.target.id === 'arScene' || e.target.tagName === 'CANVAS') {
+      closeInfo();
+    }
   });
 }
 
-// ══════════════════════════════════════════════════
-//  LOCATION (reverse geocode)
-// ══════════════════════════════════════════════════
-function startLocationFetch() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-        .then(r => r.json())
-        .then(d => {
-          const a = d.address;
-          const area = a.suburb || a.neighbourhood || a.city_district || a.city || a.town || 'your area';
-          const country = a.country || '';
-          userLocation = `Near ${area}, ${country}`;
-          document.getElementById('flLoc').textContent = userLocation;
-        })
-        .catch(() => {
-          userLocation = `${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E`;
-          document.getElementById('flLoc').textContent = userLocation;
-        });
-    },
-    () => { userLocation = 'Location unavailable'; }
-  );
+function toggleInfo() {
+  infoOpen ? closeInfo() : openInfo();
 }
 
-// ══════════════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════════════
-document.getElementById('exploreBtn').addEventListener('click', () => {
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('selectScreen').classList.add('show');
-});
-
-document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('viewerScreen').classList.remove('show');
-  document.getElementById('selectScreen').classList.add('show');
-  hideLabel();
-  // Stop AR if active
-  const mv = document.getElementById('mv');
-  if (mv.dismissPoster) mv.dismissPoster();
-});
-
-// ══════════════════════════════════════════════════
-//  OPEN CREATURE VIEWER
-// ══════════════════════════════════════════════════
-function openViewer(creature) {
-  currentCreature = creature;
-
-  // Update screen
-  document.getElementById('viewerTitle').textContent = creature.name;
-  document.getElementById('selectScreen').classList.remove('show');
-  document.getElementById('viewerScreen').classList.add('show');
-
-  // Load model
-  const mv = document.getElementById('mv');
-  mv.setAttribute('src', creature.modelSrc);
-  if (creature.iosSrc) {
-    mv.setAttribute('ios-src', creature.iosSrc);
-  }
-  mv.setAttribute('alt', creature.name);
-
-  // Update label content
-  document.getElementById('flEmoji').textContent = creature.emoji;
-  document.getElementById('flName').textContent  = creature.name;
-  document.getElementById('flSci').textContent   = creature.sciName;
-  document.getElementById('flFact').textContent  = creature.fact;
-  document.getElementById('flLoc').textContent   = userLocation;
-
-  hideLabel();
-  checkARSupport();
+function openInfo() {
+  document.getElementById('infoCard').classList.add('visible');
+  document.getElementById('hudHint').style.opacity = '0';
+  infoOpen = true;
 }
 
-// ══════════════════════════════════════════════════
-//  AR SUPPORT CHECK
-// ══════════════════════════════════════════════════
-function checkARSupport() {
-  const mv = document.getElementById('mv');
-  // model-viewer exposes canActivateAR after load
-  mv.addEventListener('load', () => {
-    if (!mv.canActivateAR) {
-      document.getElementById('noArNote').style.display = 'block';
-      document.getElementById('arBtn').style.display = 'none';
-    } else {
-      document.getElementById('noArNote').style.display = 'none';
-      document.getElementById('arBtn').style.display = 'flex';
-    }
-  }, { once: true });
+function closeInfo() {
+  document.getElementById('infoCard').classList.remove('visible');
+  document.getElementById('hudHint').style.opacity = '';
+  infoOpen = false;
 }
 
-// ══════════════════════════════════════════════════
-//  TAP ON MODEL → SHOW FLOATING LABEL
-// ══════════════════════════════════════════════════
-const mv = document.getElementById('mv');
+document.getElementById('closeBtn').addEventListener('click', closeInfo);
 
-mv.addEventListener('click', (e) => {
-  // Don't trigger if clicking AR button
-  if (e.target.closest('#arBtn') || e.target.closest('#floatLabel')) return;
-  triggerRipple(e.clientX, e.clientY);
-  if (labelVisible) {
-    hideLabel();
-  } else {
-    showLabel();
-  }
-});
-
-mv.addEventListener('ar-status', (e) => {
-  // When AR session starts, prepare label
-  if (e.detail.status === 'session-started') {
-    hideLabel();
-  }
-});
-
-// ══════════════════════════════════════════════════
-//  LABEL CONTROLS
-// ══════════════════════════════════════════════════
-function showLabel() {
-  document.getElementById('floatLabel').classList.add('visible');
-  labelVisible = true;
-}
-
-function hideLabel() {
-  document.getElementById('floatLabel').classList.remove('visible');
-  labelVisible = false;
-}
-
-document.getElementById('flClose').addEventListener('click', (e) => {
-  e.stopPropagation();
-  hideLabel();
-});
-
-// ══════════════════════════════════════════════════
-//  TAP RIPPLE
-// ══════════════════════════════════════════════════
-function triggerRipple(x, y) {
+// ══════════════════════════════════════
+//  RIPPLE
+// ══════════════════════════════════════
+function spawnRipple(x, y) {
   const r = document.createElement('div');
   r.className = 'ripple';
   r.style.left = x + 'px';
