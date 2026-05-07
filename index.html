@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>OceanAR</title>
 
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- Google model-viewer — handles AR on iOS (Quick Look) + Android (Scene Viewer / WebXR) -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
@@ -19,12 +19,13 @@
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Space Mono',monospace; background:var(--deep); color:var(--foam); overflow:hidden; }
-    .a-enter-vr, .a-enter-vr-button { display:none !important; }
+    html, body { height:100%; overflow:hidden; background:var(--deep); color:var(--foam); font-family:'Space Mono',monospace; }
 
-    /* ── SPLASH ── */
+    /* ══════════════════════════════
+       SPLASH
+    ══════════════════════════════ */
     #splash {
-      position:fixed; inset:0; z-index:999;
+      position:fixed; inset:0; z-index:500;
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       background:radial-gradient(ellipse at 50% 65%, #0a3a5a 0%, #020c18 70%);
       transition:opacity 0.7s ease;
@@ -39,105 +40,154 @@
     }
     @keyframes rise { to { transform:translateY(-110vh); opacity:0; } }
 
-    .splash-inner { position:relative; z-index:2; text-align:center; padding:2rem; max-width:380px; }
+    .splash-inner { position:relative; z-index:2; text-align:center; padding:2rem; max-width:380px; width:100%; }
     .eyebrow { font-size:0.6rem; letter-spacing:0.35em; color:var(--teal); text-transform:uppercase; margin-bottom:1rem; opacity:0.8; }
     .s-title {
       font-family:'Cormorant Garamond',serif;
-      font-size:clamp(3rem,11vw,6rem); font-weight:300; line-height:0.95;
+      font-size:clamp(3rem,12vw,6rem); font-weight:300; line-height:0.95;
       color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.2); margin-bottom:0.4rem;
     }
     .s-title em { font-style:italic; color:var(--glow); }
     .s-sub {
-      font-family:'Cormorant Garamond',serif; font-size:1.1rem;
+      font-family:'Cormorant Garamond',serif; font-size:1.05rem;
       font-style:italic; color:rgba(168,240,245,0.5); margin-bottom:2rem;
     }
-    .creature-pill {
+    .s-pill {
       display:inline-flex; align-items:center; gap:0.5rem;
       border:1px solid rgba(26,179,200,0.25); padding:0.5rem 1rem;
-      font-size:0.6rem; letter-spacing:0.1em; color:var(--teal);
+      font-size:0.58rem; letter-spacing:0.1em; color:var(--teal);
       text-transform:uppercase; margin-bottom:2rem;
       background:rgba(26,179,200,0.05);
     }
-    #startBtn {
+    #splashBtn {
       position:relative; overflow:hidden; background:transparent;
       border:1.5px solid var(--glow); color:var(--glow);
       font-family:'Space Mono',monospace; font-size:0.7rem;
       letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.5rem; cursor:pointer; transition:color 0.3s; display:block; width:100%;
+      padding:0.9rem 2.5rem; cursor:pointer; transition:color 0.3s;
+      width:100%;
     }
-    #startBtn::before {
+    #splashBtn::before {
       content:''; position:absolute; inset:0; background:var(--glow);
       transform:scaleX(0); transform-origin:left; transition:transform 0.3s; z-index:-1;
     }
-    #startBtn:hover { color:var(--deep); }
-    #startBtn:hover::before { transform:scaleX(1); }
-    .s-note { margin-top:1rem; font-size:0.5rem; line-height:2; color:rgba(168,240,245,0.25); }
-    .s-note span { color:var(--teal); }
+    #splashBtn:hover { color:var(--deep); }
+    #splashBtn:hover::before { transform:scaleX(1); }
+    .s-note { margin-top:1rem; font-size:0.48rem; line-height:2.2; color:rgba(168,240,245,0.22); }
+    .s-note b { color:var(--teal); font-weight:400; }
 
-    /* ── HUD ── */
-    #hud {
+    /* ══════════════════════════════
+       VIEWER SCREEN
+    ══════════════════════════════ */
+    #viewerScreen {
       position:fixed; inset:0; z-index:100;
-      pointer-events:none; display:none;
+      display:none; flex-direction:column;
+      background:var(--deep);
     }
-    #hud.active { display:block; }
+    #viewerScreen.show { display:flex; }
 
-    .hud-top {
-      position:absolute; top:0; left:0; right:0; padding:1.2rem 1.5rem;
+    /* Header */
+    .vheader {
+      position:absolute; top:0; left:0; right:0; z-index:20;
+      padding:1rem 1.2rem;
       display:flex; justify-content:space-between; align-items:center;
-      background:linear-gradient(to bottom, rgba(2,12,24,0.8), transparent);
+      background:linear-gradient(to bottom, rgba(2,12,24,0.9), transparent);
+      pointer-events:none;
     }
-    .hud-logo { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:300; color:var(--foam); }
-    .hud-logo span { color:var(--glow); font-style:italic; }
-    .hud-badge { font-size:0.48rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--teal); display:flex; align-items:center; gap:0.4rem; }
-    .dot { width:5px; height:5px; border-radius:50%; background:var(--glow); box-shadow:0 0 6px var(--glow); animation:pulse 2s infinite; }
+    .vlogo { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--foam); }
+    .vlogo span { color:var(--glow); font-style:italic; }
+    .vbadge { font-size:0.46rem; letter-spacing:0.18em; color:var(--teal); text-transform:uppercase; display:flex; align-items:center; gap:0.35rem; }
+    .vdot { width:5px; height:5px; border-radius:50%; background:var(--glow); box-shadow:0 0 6px var(--glow); animation:pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    .hud-hint {
-      position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      font-size:0.52rem; letter-spacing:0.15em; text-transform:uppercase;
-      color:rgba(168,240,245,0.45); white-space:nowrap; animation:fadePulse 3s infinite;
+    /* model-viewer fills screen */
+    #mv {
+      width:100%;
+      height:100%;
+      flex:1;
+      --progress-bar-color: var(--glow);
+      --progress-mask: transparent;
+      background:radial-gradient(ellipse at 50% 55%, #071e36 0%, #020c18 70%);
     }
-    @keyframes fadePulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
 
-    /* ── INFO CARD ── */
+    /* Bottom controls */
+    .vfooter {
+      position:absolute; bottom:0; left:0; right:0; z-index:20;
+      padding:1rem 1.2rem 2rem;
+      display:flex; flex-direction:column; align-items:center; gap:0.7rem;
+      background:linear-gradient(to top, rgba(2,12,24,0.85), transparent);
+      pointer-events:none;
+    }
+
+    .vhint {
+      font-size:0.5rem; letter-spacing:0.15em; text-transform:uppercase;
+      color:rgba(168,240,245,0.3); animation:fadePulse 3s infinite;
+    }
+    @keyframes fadePulse { 0%,100%{opacity:0.3} 50%{opacity:0.9} }
+
+    /* AR button — slot inside model-viewer */
+    #arBtn {
+      pointer-events:all;
+      background:var(--glow); color:var(--deep);
+      font-family:'Space Mono',monospace; font-size:0.65rem;
+      letter-spacing:0.18em; text-transform:uppercase;
+      padding:0.85rem 2rem; border:none; cursor:pointer; font-weight:700;
+      display:flex; align-items:center; gap:0.6rem;
+      box-shadow:0 0 30px rgba(0,255,231,0.35);
+      width:min(340px, 90vw);
+      justify-content:center;
+    }
+
+    /* Info tap hint */
+    #tapHint {
+      pointer-events:all;
+      font-size:0.48rem; letter-spacing:0.12em; text-transform:uppercase;
+      color:rgba(168,240,245,0.35); animation:fadePulse 3s infinite;
+      text-align:center;
+    }
+
+    /* ══════════════════════════════
+       INFO CARD
+    ══════════════════════════════ */
     #infoCard {
       position:fixed; bottom:-100%; left:50%; transform:translateX(-50%);
-      width:min(400px, 92vw); z-index:200; pointer-events:all;
+      width:min(420px, 93vw); z-index:600;
       transition:bottom 0.45s cubic-bezier(0.16,1,0.3,1);
+      pointer-events:none;
     }
-    #infoCard.visible { bottom:1.5rem; }
+    #infoCard.visible { bottom:1.5rem; pointer-events:all; }
 
     .card-wrap {
-      background:linear-gradient(135deg, rgba(10,37,64,0.97), rgba(2,12,24,0.97));
+      background:linear-gradient(135deg, rgba(10,37,64,0.98), rgba(2,12,24,0.98));
       border:1px solid rgba(26,179,200,0.25);
-      overflow:hidden; backdrop-filter:blur(20px);
+      overflow:hidden; backdrop-filter:blur(24px);
       box-shadow:0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(0,255,231,0.05);
     }
-    .card-top-bar { height:3px; background:linear-gradient(90deg, var(--glow), var(--teal), transparent); }
+    .card-bar { height:3px; background:linear-gradient(90deg, var(--glow), var(--teal), transparent); }
     .card-body { padding:1.4rem; }
-    .card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.9rem; }
+    .card-hd { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.9rem; }
     .card-name { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--foam); line-height:1; }
-    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.78rem; font-style:italic; color:rgba(168,240,245,0.4); margin-top:0.2rem; }
-    .card-emoji { font-size:2.5rem; filter:drop-shadow(0 0 10px rgba(0,255,231,0.4)); }
-    .card-hr { height:1px; background:linear-gradient(90deg, rgba(26,179,200,0.3), transparent); margin-bottom:0.9rem; }
+    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.76rem; font-style:italic; color:rgba(168,240,245,0.38); margin-top:0.2rem; }
+    .card-em   { font-size:2.5rem; filter:drop-shadow(0 0 10px rgba(0,255,231,0.4)); }
+    .card-hr   { height:1px; background:linear-gradient(90deg,rgba(26,179,200,0.3),transparent); margin-bottom:0.9rem; }
     .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; margin-bottom:0.9rem; }
-    .stat label { display:block; font-size:0.46rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); margin-bottom:0.15rem; }
+    .stat label { display:block; font-size:0.44rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); margin-bottom:0.15rem; }
     .stat value { font-size:0.68rem; color:var(--foam); line-height:1.4; }
     .fact-box { background:rgba(0,255,231,0.04); border-left:2px solid var(--glow); padding:0.7rem 0.9rem; margin-bottom:1.1rem; }
-    .fact-label { font-size:0.46rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--glow); margin-bottom:0.25rem; }
-    .fact-text { font-family:'Cormorant Garamond',serif; font-size:0.9rem; font-style:italic; color:rgba(168,240,245,0.8); line-height:1.5; }
+    .fact-lbl { font-size:0.44rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--glow); margin-bottom:0.25rem; }
+    .fact-txt { font-family:'Cormorant Garamond',serif; font-size:0.88rem; font-style:italic; color:rgba(168,240,245,0.8); line-height:1.55; }
     #closeBtn {
       width:100%; background:transparent; border:1px solid rgba(26,179,200,0.2);
       color:rgba(168,240,245,0.4); font-family:'Space Mono',monospace;
       font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.65rem; cursor:pointer; transition:all 0.2s; pointer-events:all;
+      padding:0.65rem; cursor:pointer; transition:all 0.2s;
     }
     #closeBtn:hover { border-color:var(--teal); color:var(--teal); }
 
     /* tap ripple */
     .ripple {
       position:fixed; width:60px; height:60px; border-radius:50%;
-      border:2px solid var(--glow); pointer-events:none; z-index:300;
+      border:2px solid var(--glow); pointer-events:none; z-index:700;
       transform:translate(-50%,-50%) scale(0);
       animation:rippleOut 0.6s ease forwards;
     }
@@ -145,107 +195,114 @@
       0%  { transform:translate(-50%,-50%) scale(0);   opacity:1; }
       100%{ transform:translate(-50%,-50%) scale(2.5); opacity:0; }
     }
+
+    /* no-AR message */
+    #noArMsg {
+      display:none; font-size:0.5rem; letter-spacing:0.1em;
+      color:rgba(168,240,245,0.3); text-align:center;
+      line-height:1.9; padding:0 1rem; pointer-events:none;
+    }
   </style>
 </head>
 <body>
 
-<!-- ── SPLASH ── -->
+<!-- ══════════════ SPLASH ══════════════ -->
 <div id="splash">
   <div class="bubbles" id="bubblesEl"></div>
   <div class="splash-inner">
     <p class="eyebrow">CPIS360 — Immersive AR Experience</p>
     <h1 class="s-title">Ocean<em>AR</em></h1>
     <p class="s-sub">Real sea creatures in your world</p>
-    <div class="creature-pill">
-      <span>🦈</span> Swimming Shark
-    </div>
-    <button id="startBtn">Launch AR Experience</button>
+    <div class="s-pill"><span>🦈</span> Swimming Shark</div>
+    <button id="splashBtn">Meet the Shark</button>
     <p class="s-note">
-      Works on <span>iOS Safari</span> &amp; <span>Android Chrome</span><br>
-      Allow camera access when prompted<br>
-      Tap the shark to learn about it
+      <b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>
+      The shark will appear in your real environment<br>
+      Tap it to discover facts about it
     </p>
   </div>
 </div>
 
-<!-- ── HUD ── -->
-<div id="hud">
-  <div class="hud-top">
-    <div class="hud-logo">Ocean<span>AR</span></div>
-    <div class="hud-badge"><div class="dot"></div>AR Live</div>
+<!-- ══════════════ VIEWER ══════════════ -->
+<div id="viewerScreen">
+
+  <div class="vheader">
+    <div class="vlogo">Ocean<span>AR</span></div>
+    <div class="vbadge"><div class="vdot"></div>Ready</div>
   </div>
-  <div class="hud-hint" id="hudHint">Tap the shark to learn about it</div>
+
+  <!--
+    model-viewer:
+    - camera-controls  → drag to rotate / pinch to zoom in 3D preview
+    - auto-rotate      → shark slowly spins while user reads
+    - animation-name   → plays the GLB's built-in swim animation
+    - ar               → enables the AR button
+    - ar-modes         → webxr (Android Chrome) + scene-viewer (Android) + quick-look (iOS)
+    - ar-scale="auto"  → lets the user resize in AR
+    - xr-environment   → adds realistic lighting in AR
+  -->
+  <model-viewer
+    id="mv"
+    src="models/swimming_shark.glb"
+    alt="Swimming Shark"
+    camera-controls
+    touch-action="pan-y"
+    auto-rotate
+    auto-rotate-delay="1000"
+    rotation-per-second="15deg"
+    animation-name="swim"
+    autoplay
+    shadow-intensity="1"
+    shadow-softness="0.8"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    ar-scale="auto"
+    xr-environment
+  >
+    <!-- Custom AR button inside model-viewer slot -->
+    <button slot="ar-button" id="arBtn">
+      📷 &nbsp; Place Shark in Your World
+    </button>
+
+  </model-viewer>
+
+  <div class="vfooter">
+    <div class="vhint">Drag to rotate · Pinch to zoom</div>
+    <div id="tapHint">Tap the shark to learn about it</div>
+    <div id="noArMsg">AR not supported on this browser.<br>You can still explore the 3D model above.</div>
+  </div>
+
 </div>
 
-<!-- ── INFO CARD ── -->
+<!-- ══════════════ INFO CARD ══════════════ -->
 <div id="infoCard">
   <div class="card-wrap">
-    <div class="card-top-bar"></div>
+    <div class="card-bar"></div>
     <div class="card-body">
-      <div class="card-header">
+      <div class="card-hd">
         <div>
           <div class="card-name">Swimming Shark</div>
           <div class="card-sci">Carcharhinus sp.</div>
         </div>
-        <div class="card-emoji">🦈</div>
+        <div class="card-em">🦈</div>
       </div>
       <div class="card-hr"></div>
       <div class="card-grid">
         <div class="stat"><label>Habitat</label><value>Open Ocean &amp; Coastal Waters</value></div>
         <div class="stat"><label>Diet</label><value>Fish, Rays, Marine Mammals</value></div>
-        <div class="stat"><label>Depth</label><value>0–600 m</value></div>
+        <div class="stat"><label>Depth</label><value>0 – 600 m</value></div>
         <div class="stat"><label>Conservation</label><value>Vulnerable</value></div>
       </div>
       <div class="fact-box">
-        <div class="fact-label">✦ Did You Know</div>
-        <div class="fact-text">Sharks have electroreceptors called the Ampullae of Lorenzini — they can detect the faint electrical field produced by the heartbeat of hidden prey up to 1 metre away.</div>
+        <div class="fact-lbl">✦ Did You Know</div>
+        <div class="fact-txt">
+          Sharks have special organs called the Ampullae of Lorenzini — electroreceptors that detect the faint electrical fields produced by the heartbeat of hidden prey up to 1 metre away.
+        </div>
       </div>
       <button id="closeBtn">— Dismiss —</button>
     </div>
   </div>
 </div>
-
-<!-- ── A-FRAME SCENE ── -->
-<a-scene
-  id="arScene"
-  embedded
-  arjs="sourceType:webcam; debugUIEnabled:false; trackingMethod:best;"
-  renderer="antialias:true; alpha:true; logarithmicDepthBuffer:true;"
-  vr-mode-ui="enabled:false"
-  style="display:none; position:fixed; inset:0; z-index:50;"
->
-  <a-assets timeout="60000">
-    <a-asset-item id="sharkModel" src="models/swimming_shark.glb"></a-asset-item>
-  </a-assets>
-
-  <!--
-    Markerless: creature placed in front of camera using
-    a-camera + device orientation. The entity is placed
-    at a fixed position in world space relative to the camera.
-  -->
-  <a-entity
-    id="sharkEntity"
-    gltf-model="#sharkModel"
-    scale="0.5 0.5 0.5"
-    position="0 0 -3"
-    animation-mixer
-    class="clickable"
-  ></a-entity>
-
-  <!-- Lights -->
-  <a-light type="ambient"     color="#88ccff" intensity="1.2"></a-light>
-  <a-light type="directional" color="#ffffff" intensity="0.8" position="1 3 2"></a-light>
-  <a-light type="point"       color="#1ab3c8" intensity="0.6" position="0 2 -2"></a-light>
-
-  <a-camera
-    id="arCamera"
-    look-controls="enabled:true"
-    arjs-look-controls="smoothingFactor:0.1"
-    gps-camera="simulateAltitude:0"
-    rotation-reader
-  ></a-camera>
-
-</a-scene>
 
 <script>
 // ══════════════════════════════════════
@@ -263,72 +320,61 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ══════════════════════════════════════
-//  START
+//  SPLASH → VIEWER
 // ══════════════════════════════════════
-document.getElementById('startBtn').addEventListener('click', () => {
+document.getElementById('splashBtn').addEventListener('click', () => {
   document.getElementById('splash').classList.add('hidden');
-
-  const scene = document.getElementById('arScene');
-  scene.style.display = 'block';
-  document.getElementById('hud').classList.add('active');
-
-  // Wait for scene to load then setup interaction
-  scene.addEventListener('loaded', setupInteraction);
-  // Fallback if already loaded
-  if (scene.hasLoaded) setupInteraction();
+  document.getElementById('viewerScreen').classList.add('show');
 });
 
 // ══════════════════════════════════════
-//  INTERACTION
+//  MODEL VIEWER EVENTS
+// ══════════════════════════════════════
+const mv = document.getElementById('mv');
+
+// Check AR support after model loads
+mv.addEventListener('load', () => {
+  if (!mv.canActivateAR) {
+    document.getElementById('arBtn').style.display = 'none';
+    document.getElementById('noArMsg').style.display = 'block';
+  }
+
+  // Try all animation names since we don't know exact name in GLB
+  const animations = mv.availableAnimations;
+  if (animations && animations.length > 0) {
+    mv.animationName = animations[0]; // play first available animation
+    mv.play();
+  }
+});
+
+// ══════════════════════════════════════
+//  TAP MODEL → INFO CARD
 // ══════════════════════════════════════
 let infoOpen = false;
 
-function setupInteraction() {
-  const shark = document.getElementById('sharkEntity');
-  if (!shark) return;
-
-  // Click / tap on the shark entity
-  shark.addEventListener('click', (e) => {
-    spawnRipple(e.clientX || window.innerWidth/2, e.clientY || window.innerHeight/2);
-    toggleInfo();
-  });
-
-  // Touch fallback
-  shark.addEventListener('touchend', (e) => {
-    e.stopPropagation();
-    const t = e.changedTouches[0];
-    spawnRipple(t.clientX, t.clientY);
-    toggleInfo();
-  }, { passive: true });
-
-  // Tap elsewhere = dismiss
-  document.getElementById('arScene').addEventListener('click', (e) => {
-    if (e.target.id === 'arScene' || e.target.tagName === 'CANVAS') {
-      closeInfo();
-    }
-  });
-}
-
-function toggleInfo() {
+mv.addEventListener('click', (e) => {
+  // Ignore clicks on the AR button
+  if (e.target.closest('#arBtn')) return;
+  spawnRipple(e.clientX, e.clientY);
   infoOpen ? closeInfo() : openInfo();
-}
+});
 
 function openInfo() {
   document.getElementById('infoCard').classList.add('visible');
-  document.getElementById('hudHint').style.opacity = '0';
+  document.getElementById('tapHint').style.opacity = '0';
   infoOpen = true;
 }
 
 function closeInfo() {
   document.getElementById('infoCard').classList.remove('visible');
-  document.getElementById('hudHint').style.opacity = '';
+  document.getElementById('tapHint').style.opacity = '';
   infoOpen = false;
 }
 
 document.getElementById('closeBtn').addEventListener('click', closeInfo);
 
 // ══════════════════════════════════════
-//  RIPPLE
+//  RIPPLE EFFECT
 // ══════════════════════════════════════
 function spawnRipple(x, y) {
   const r = document.createElement('div');
