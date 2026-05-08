@@ -215,7 +215,9 @@
     <p class="s-sub">Real sea creatures in your world</p>
     <div class="s-pills">
       <div class="s-pill"><span>🦈</span> Shark</div>
-      <div class="s-pill"><span>🐠</span> Clownfish</div>
+      <div class="s-pill"><span>🐙</span> Octopus</div>
+      <div class="s-pill"><span>🐡</span> Pufferfish</div>
+      <div class="s-pill"><span>🐢</span> Turtle</div>
     </div>
     <button id="splashBtn">Explore the Ocean</button>
     <p class="s-note">
@@ -318,18 +320,46 @@ const CREATURES = [
     fact: 'Sharks have electroreceptors called the Ampullae of Lorenzini — they detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away.'
   },
   {
-    id: 'clownfish',
-    name: 'Clownfish',
-    sciName: 'Amphiprioninae',
-    emoji: '🐠',
-    color: '#ff6b35',
-    model: 'models/clownfish.glb',
-    tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
-    habitat: 'Coral Reefs, Indo-Pacific',
-    diet: 'Algae, Plankton, Small Invertebrates',
-    depth: '1 – 15 m',
+    id: 'octopus',
+    name: 'Octopus',
+    sciName: 'Octopus vulgaris',
+    emoji: '🐙',
+    color: '#c2624a',
+    model: 'models/animal_crossing_new_horizons_octopus.glb',
+    tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
+    habitat: 'Coral Reefs & Rocky Seabeds',
+    diet: 'Crabs, Shrimp, Fish',
+    depth: '0 – 200 m',
     status: 'Least Concern',
-    fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
+    fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
+  },
+  {
+    id: 'pufferfish',
+    name: 'Pufferfish',
+    sciName: 'Tetraodontidae',
+    emoji: '🐡',
+    color: '#e8c84a',
+    model: 'models/pufferfish.glb',
+    tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
+    habitat: 'Tropical & Subtropical Seas',
+    diet: 'Algae, Shellfish, Molluscs',
+    depth: '1 – 100 m',
+    status: 'Varies by Species',
+    fact: 'Pufferfish contain tetrodotoxin — a poison 1,200x more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by licensed chefs.'
+  },
+  {
+    id: 'turtle',
+    name: 'Sea Turtle',
+    sciName: 'Cheloniidae',
+    emoji: '🐢',
+    color: '#4a8c5c',
+    model: 'models/happy_cute_sea_turtle.glb',
+    tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
+    habitat: 'Tropical & Subtropical Oceans',
+    diet: 'Seagrass, Algae, Jellyfish',
+    depth: '0 – 30 m',
+    status: 'Endangered',
+    fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — and return to the exact same beach where they were born to lay their eggs.'
   }
 ];
 
