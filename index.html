@@ -214,6 +214,7 @@
     <h1 class="s-title">Ocean<em>AR</em></h1>
     <p class="s-sub">Real sea creatures in your world</p>
     <div class="s-pills">
+      <div class="s-pill"><span>🐠</span> Clownfish</div>
       <div class="s-pill"><span>🦈</span> Shark</div>
       <div class="s-pill"><span>🐙</span> Octopus</div>
       <div class="s-pill"><span>🐡</span> Pufferfish</div>
@@ -255,7 +256,10 @@
     rotation-per-second="15deg"
     autoplay
     shadow-intensity="1"
-    shadow-softness="0.8"
+    shadow-softness="0.5"
+    environment-image="neutral"
+    exposure="1"
+    tone-mapping="commerce"
     ar
     ar-modes="webxr scene-viewer quick-look"
     ar-scale="auto"
@@ -305,6 +309,20 @@
 //  CREATURE DATA
 // ══════════════════════════════════════
 const CREATURES = [
+  {
+    id: 'clownfish',
+    name: 'Clownfish',
+    sciName: 'Amphiprioninae',
+    emoji: '🐠',
+    color: '#ff6b35',
+    model: 'models/clownfish.glb',
+    tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
+    habitat: 'Coral Reefs, Indo-Pacific',
+    diet: 'Algae, Plankton, Small Invertebrates',
+    depth: '1 – 15 m',
+    status: 'Least Concern',
+    fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
+  },
   {
     id: 'shark',
     name: 'Swimming Shark',
