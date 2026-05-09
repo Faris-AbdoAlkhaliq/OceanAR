@@ -1,532 +1,627 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OceanAR</title>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep: #020c18;
+      --bg:   #020c18;
       --teal: #1ab3c8;
       --foam: #a8f0f5;
       --glow: #00ffe7;
+      --serif: 'Georgia', serif;
+      --mono:  'Courier New', monospace;
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { height:100%; overflow:hidden; background:var(--deep); color:var(--foam); font-family:'Space Mono',monospace; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--foam);
+      font-family: var(--mono);
+    }
 
-    /* ── SPLASH ── */
+    /* ── Shared Utilities ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .screen.active { display: flex; }
+
+    button {
+      font-family: var(--mono);
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    /* ── Splash Screen ── */
     #splash {
-      position:fixed; inset:0; z-index:500;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      background:radial-gradient(ellipse at 50% 65%, #0a3a5a 0%, #020c18 70%);
-      transition:opacity 0.7s ease;
+      background: radial-gradient(ellipse at 50% 65%, #0a3a5a, var(--bg));
+      text-align: center;
+      padding: 2rem;
+      gap: 1rem;
     }
-    #splash.hidden { opacity:0; pointer-events:none; }
-    .bubbles { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-    .bubble {
-      position:absolute; bottom:-40px; border-radius:50%;
-      background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(26,179,200,0.07));
-      border:1px solid rgba(26,179,200,0.2); animation:rise linear infinite;
-    }
-    @keyframes rise { to { transform:translateY(-110vh); opacity:0; } }
-    .splash-inner { position:relative; z-index:2; text-align:center; padding:2rem; max-width:380px; width:100%; }
-    .eyebrow { font-size:0.6rem; letter-spacing:0.35em; color:var(--teal); text-transform:uppercase; margin-bottom:1rem; opacity:0.8; }
-    .s-title {
-      font-family:'Cormorant Garamond',serif;
-      font-size:clamp(3rem,12vw,6rem); font-weight:300; line-height:0.95;
-      color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.2); margin-bottom:0.4rem;
-    }
-    .s-title em { font-style:italic; color:var(--glow); }
-    .s-sub { font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:rgba(168,240,245,0.5); margin-bottom:1.8rem; }
-    .s-pills { display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap; margin-bottom:1.8rem; }
-    .s-pill {
-      display:inline-flex; align-items:center; gap:0.4rem;
-      border:1px solid rgba(26,179,200,0.25); padding:0.4rem 0.8rem;
-      font-size:0.55rem; letter-spacing:0.1em; color:var(--teal);
-      text-transform:uppercase; background:rgba(26,179,200,0.05);
-    }
-    #splashBtn {
-      position:relative; overflow:hidden; background:transparent;
-      border:1.5px solid var(--glow); color:var(--glow);
-      font-family:'Space Mono',monospace; font-size:0.7rem;
-      letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.5rem; cursor:pointer; transition:color 0.3s; width:100%;
-    }
-    #splashBtn::before {
-      content:''; position:absolute; inset:0; background:var(--glow);
-      transform:scaleX(0); transform-origin:left; transition:transform 0.3s; z-index:-1;
-    }
-    #splashBtn:hover { color:var(--deep); }
-    #splashBtn:hover::before { transform:scaleX(1); }
-    .s-note { margin-top:1rem; font-size:0.48rem; line-height:2.2; color:rgba(168,240,245,0.22); }
-    .s-note b { color:var(--teal); font-weight:400; }
 
-    /* ── SELECT SCREEN ── */
-    #selectScreen {
-      position:fixed; inset:0; z-index:400;
-      display:none; flex-direction:column;
-      background:var(--deep); overflow-y:auto;
+    #splash h1 {
+      font-family: var(--serif);
+      font-size: clamp(3rem, 12vw, 6rem);
+      font-weight: 300;
+      color: var(--foam);
+      line-height: 1;
     }
-    #selectScreen.show { display:flex; }
 
-    .sel-header {
-      padding:1.5rem 1.5rem 0.5rem; position:sticky; top:0; z-index:2;
-      background:linear-gradient(to bottom, rgba(2,12,24,1) 80%, transparent);
+    #splash h1 em {
+      font-style: italic;
+      color: var(--glow);
     }
-    .sel-eyebrow { font-size:0.55rem; letter-spacing:0.3em; color:var(--teal); text-transform:uppercase; margin-bottom:0.3rem; opacity:0.7; }
-    .sel-title { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--foam); }
-    .sel-title em { font-style:italic; color:var(--glow); }
 
-    .creature-list { padding:1rem 1.5rem 3rem; display:flex; flex-direction:column; gap:1rem; }
-
-    .c-card {
-      background:linear-gradient(135deg, rgba(10,37,64,0.8), rgba(2,12,24,0.9));
-      border:1px solid rgba(26,179,200,0.2);
-      cursor:pointer; transition:all 0.25s ease; overflow:hidden;
+    #splash p {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--foam) 50%, transparent);
+      line-height: 2;
     }
-    .c-card:active { border-color:rgba(0,255,231,0.5); box-shadow:0 0 25px rgba(0,255,231,0.08); transform:scale(0.99); }
-    .c-card-bar { height:2px; }
-    .c-card-inner { display:flex; align-items:center; gap:1rem; padding:1.1rem; }
-    .c-emoji { font-size:3rem; filter:drop-shadow(0 0 10px rgba(0,255,231,0.25)); flex-shrink:0; }
-    .c-info { flex:1; }
-    .c-name { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:300; color:var(--foam); line-height:1; margin-bottom:0.15rem; }
-    .c-sci  { font-family:'Cormorant Garamond',serif; font-size:0.7rem; font-style:italic; color:rgba(168,240,245,0.38); margin-bottom:0.5rem; }
-    .c-tags { display:flex; gap:0.4rem; flex-wrap:wrap; }
-    .c-tag  { font-size:0.44rem; letter-spacing:0.1em; text-transform:uppercase; padding:0.18rem 0.5rem; border-radius:10px; background:rgba(26,179,200,0.07); border:1px solid rgba(26,179,200,0.2); color:var(--teal); }
-    .c-arrow { font-size:1.1rem; color:rgba(0,255,231,0.35); flex-shrink:0; }
 
-    /* ── VIEWER SCREEN ── */
-    #viewerScreen {
-      position:fixed; inset:0; z-index:300;
-      display:none; flex-direction:column; background:var(--deep);
-    }
-    #viewerScreen.show { display:flex; }
+    #splash p b { color: var(--teal); font-weight: 400; }
 
-    .vheader {
-      position:absolute; top:0; left:0; right:0; z-index:20;
-      padding:1rem 1.2rem;
-      display:flex; justify-content:space-between; align-items:center;
-      background:linear-gradient(to bottom, rgba(2,12,24,0.9), transparent);
-      pointer-events:none;
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
     }
-    .vlogo { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--foam); }
-    .vlogo span { color:var(--glow); font-style:italic; }
-    .vback {
-      pointer-events:all; background:transparent;
-      border:1px solid rgba(168,240,245,0.2); color:rgba(168,240,245,0.5);
-      font-family:'Space Mono',monospace; font-size:0.52rem;
-      letter-spacing:0.12em; text-transform:uppercase;
-      padding:0.45rem 0.8rem; cursor:pointer; transition:all 0.2s;
-    }
-    .vback:hover { border-color:var(--teal); color:var(--teal); }
 
-    /* model-viewer */
-    #mv {
-      width:100%; height:100%; flex:1;
+    .pill {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+      padding: 0.3rem 0.7rem;
+      background: color-mix(in srgb, var(--teal) 5%, transparent);
+    }
+
+    .btn-primary {
+      width: 100%;
+      max-width: 320px;
+      padding: 0.9rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--glow);
+      border: 1.5px solid var(--glow);
+      background: none;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .btn-primary:hover {
+      background: var(--glow);
+      color: var(--bg);
+    }
+
+    /* ── Select Screen ── */
+    #select {
+      background: var(--bg);
+      justify-content: flex-start;
+      padding: 2rem 1.5rem;
+      gap: 1rem;
+      overflow-y: auto;
+    }
+
+    #select header { width: 100%; }
+
+    #select header p {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--teal);
+      opacity: 0.7;
+    }
+
+    #select header h2 {
+      font-family: var(--serif);
+      font-size: 1.9rem;
+      font-weight: 300;
+      color: var(--foam);
+    }
+
+    #select header h2 em { color: var(--glow); }
+
+    /* Creature cards */
+    .cards { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+
+    article {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+      background: color-mix(in srgb, #0a2540 80%, transparent);
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      overflow: hidden;
+    }
+
+    article:active {
+      border-color: var(--glow);
+      transform: scale(0.99);
+    }
+
+    .card-stripe { height: 2px; }
+
+    .card-body {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .card-emoji { font-size: 2.8rem; flex-shrink: 0; }
+
+    .card-info { flex: 1; }
+
+    .card-info h3 {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: var(--foam);
+      line-height: 1;
+    }
+
+    .card-info small {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.7rem;
+      color: color-mix(in srgb, var(--foam) 40%, transparent);
+      display: block;
+      margin: 0.15rem 0 0.4rem;
+    }
+
+    .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+    .tag {
+      font-size: 0.42rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+      padding: 0.15rem 0.45rem;
+    }
+
+    /* ── Viewer Screen ── */
+    #viewer {
+      background: var(--bg);
+      justify-content: stretch;
+      padding: 0;
+    }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      flex: 1;
       --progress-bar-color: var(--glow);
-      --progress-mask: transparent;
-      background:radial-gradient(ellipse at 50% 55%, #071e36 0%, #020c18 70%);
+      background: radial-gradient(ellipse at 50% 55%, #071e36, var(--bg));
     }
 
-    /* footer */
-    .vfooter {
-      position:absolute; bottom:0; left:0; right:0; z-index:20;
-      padding:0.8rem 1.2rem 2rem;
-      display:flex; flex-direction:column; align-items:center; gap:0.6rem;
-      background:linear-gradient(to top, rgba(2,12,24,0.92) 60%, transparent);
-      pointer-events:none;
+    /* Viewer header */
+    .vhead {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      padding: 1rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 90%, transparent), transparent);
+      pointer-events: none;
     }
-    .vhint { font-size:0.48rem; letter-spacing:0.15em; text-transform:uppercase; color:rgba(168,240,245,0.28); animation:fadePulse 3s infinite; }
-    @keyframes fadePulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
-    #tapHint { font-size:0.5rem; letter-spacing:0.12em; text-transform:uppercase; color:rgba(168,240,245,0.4); transition:opacity 0.3s; }
+
+    .vhead .logo {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--foam);
+    }
+
+    .vhead .logo em { color: var(--glow); }
+
+    #backBtn {
+      pointer-events: all;
+      font-size: 0.52rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--foam) 50%, transparent);
+      border: 1px solid color-mix(in srgb, var(--foam) 20%, transparent);
+      padding: 0.45rem 0.8rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #backBtn:hover { color: var(--teal); border-color: var(--teal); }
+
+    /* Viewer footer */
+    .vfoot {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 20;
+      padding: 0.8rem 1.2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent) 60%, transparent);
+    }
+
+    .vfoot small {
+      font-size: 0.48rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--foam) 30%, transparent);
+      animation: pulse 3s ease infinite;
+    }
+
+    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
 
     #arBtn {
-      pointer-events:all;
-      background:var(--glow); color:var(--deep);
-      font-family:'Space Mono',monospace; font-size:0.65rem;
-      letter-spacing:0.18em; text-transform:uppercase;
-      padding:0.85rem 0; border:none; cursor:pointer; font-weight:700;
-      display:flex; align-items:center; justify-content:center; gap:0.6rem;
-      box-shadow:0 0 30px rgba(0,255,231,0.3);
-      width:min(340px, 90vw);
+      width: min(320px, 90vw);
+      padding: 0.85rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--bg);
+      background: var(--glow);
+      box-shadow: 0 0 30px color-mix(in srgb, var(--glow) 35%, transparent);
     }
-    #noArMsg { display:none; font-size:0.48rem; color:rgba(168,240,245,0.25); text-align:center; line-height:1.9; pointer-events:none; }
 
-    /* ── INFO CARD ── */
+    /* ── Info Card ── */
     #infoCard {
-      position:fixed; bottom:-100%; left:50%; transform:translateX(-50%);
-      width:min(420px, 93vw); z-index:600;
-      transition:bottom 0.45s cubic-bezier(0.16,1,0.3,1);
-      pointer-events:none;
+      position: fixed;
+      bottom: -100%;
+      left: 50%;
+      translate: -50% 0;
+      width: min(420px, 93vw);
+      z-index: 600;
+      pointer-events: none;
+      transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    #infoCard.visible { bottom:1.5rem; pointer-events:all; }
-    .card-wrap {
-      background:linear-gradient(135deg, rgba(10,37,64,0.98), rgba(2,12,24,0.98));
-      border:1px solid rgba(26,179,200,0.25); overflow:hidden;
-      backdrop-filter:blur(24px);
-      box-shadow:0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(0,255,231,0.05);
-    }
-    .card-bar { height:3px; background:linear-gradient(90deg, var(--glow), var(--teal), transparent); }
-    .card-body { padding:1.4rem; }
-    .card-hd { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.9rem; }
-    .card-name { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--foam); line-height:1; }
-    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.76rem; font-style:italic; color:rgba(168,240,245,0.38); margin-top:0.2rem; }
-    .card-em   { font-size:2.5rem; filter:drop-shadow(0 0 10px rgba(0,255,231,0.4)); }
-    .card-hr   { height:1px; background:linear-gradient(90deg,rgba(26,179,200,0.3),transparent); margin-bottom:0.9rem; }
-    .card-grid { display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; margin-bottom:0.9rem; }
-    .stat label { display:block; font-size:0.44rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--teal); margin-bottom:0.15rem; }
-    .stat value { font-size:0.68rem; color:var(--foam); line-height:1.4; }
-    .fact-box { background:rgba(0,255,231,0.04); border-left:2px solid var(--glow); padding:0.7rem 0.9rem; margin-bottom:1.1rem; }
-    .fact-lbl { font-size:0.44rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--glow); margin-bottom:0.25rem; }
-    .fact-txt { font-family:'Cormorant Garamond',serif; font-size:0.88rem; font-style:italic; color:rgba(168,240,245,0.8); line-height:1.55; }
-    #closeBtn {
-      width:100%; background:transparent; border:1px solid rgba(26,179,200,0.2);
-      color:rgba(168,240,245,0.4); font-family:'Space Mono',monospace;
-      font-size:0.5rem; letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.65rem; cursor:pointer; transition:all 0.2s;
-    }
-    #closeBtn:hover { border-color:var(--teal); color:var(--teal); }
 
-    /* ripple */
-    .ripple {
-      position:fixed; width:60px; height:60px; border-radius:50%;
-      border:2px solid var(--glow); pointer-events:none; z-index:700;
-      transform:translate(-50%,-50%) scale(0);
-      animation:rippleOut 0.6s ease forwards;
+    #infoCard.open {
+      bottom: 1.5rem;
+      pointer-events: all;
     }
-    @keyframes rippleOut {
-      0%  { transform:translate(-50%,-50%) scale(0);   opacity:1; }
-      100%{ transform:translate(-50%,-50%) scale(2.5); opacity:0; }
+
+    .info-wrap {
+      background: color-mix(in srgb, #0a2540 97%, transparent);
+      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px color-mix(in srgb, black 70%, transparent);
+      overflow: hidden;
+    }
+
+    .info-bar { height: 3px; background: linear-gradient(90deg, var(--glow), var(--teal), transparent); }
+
+    .info-body { padding: 1.4rem; }
+
+    .info-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.9rem;
+    }
+
+    .info-head h2 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--foam);
+      line-height: 1;
+    }
+
+    .info-head small {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--foam) 38%, transparent);
+      display: block;
+      margin-top: 0.2rem;
+    }
+
+    .info-emoji { font-size: 2.5rem; }
+
+    hr { border: none; border-top: 1px solid color-mix(in srgb, var(--teal) 30%, transparent); margin-bottom: 0.9rem; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .info-grid dt {
+      font-size: 0.44rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 0.12rem;
+    }
+
+    .info-grid dd { font-size: 0.68rem; color: var(--foam); line-height: 1.4; }
+
+    .fact {
+      background: color-mix(in srgb, var(--glow) 4%, transparent);
+      border-left: 2px solid var(--glow);
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .fact p:first-child {
+      font-size: 0.44rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--glow);
+      margin-bottom: 0.25rem;
+    }
+
+    .fact p:last-child {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.88rem;
+      color: color-mix(in srgb, var(--foam) 80%, transparent);
+      line-height: 1.55;
+    }
+
+    #closeBtn {
+      width: 100%;
+      padding: 0.65rem;
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--foam) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #closeBtn:hover { color: var(--teal); border-color: var(--teal); }
+
+    /* ── Tap Ripple ── */
+    .ripple {
+      position: fixed;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      border: 2px solid var(--glow);
+      pointer-events: none;
+      z-index: 700;
+      translate: -50% -50%;
+      animation: ripple 0.6s ease forwards;
+    }
+
+    @keyframes ripple {
+      from { scale: 0; opacity: 1; }
+      to   { scale: 2.5; opacity: 0; }
     }
   </style>
 </head>
 <body>
 
-<!-- ══ SPLASH ══ -->
-<div id="splash">
-  <div class="bubbles" id="bubblesEl"></div>
-  <div class="splash-inner">
-    <p class="eyebrow">CPIS360 — Immersive AR Experience</p>
-    <h1 class="s-title">Ocean<em>AR</em></h1>
-    <p class="s-sub">Real sea creatures in your world</p>
-    <div class="s-pills">
-      <div class="s-pill"><span>🐠</span> Clownfish</div>
-      <div class="s-pill"><span>🦈</span> Shark</div>
-      <div class="s-pill"><span>🐙</span> Octopus</div>
-      <div class="s-pill"><span>🐡</span> Pufferfish</div>
-      <div class="s-pill"><span>🐢</span> Turtle</div>
-    </div>
-    <button id="splashBtn">Explore the Ocean</button>
-    <p class="s-note">
-      <b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>
-      Place real sea creatures in your environment<br>
-      Tap any creature to discover facts about it
-    </p>
+<!-- Splash -->
+<section id="splash" class="screen active">
+  <p style="font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--teal);opacity:0.8">CPIS360 — Immersive AR Experience</p>
+  <h1><em>Ocean</em>AR</h1>
+  <p>Real sea creatures in your world</p>
+  <div class="pills">
+    <span class="pill">🐠 Clownfish</span>
+    <span class="pill">🦈 Shark</span>
+    <span class="pill">🐙 Octopus</span>
+    <span class="pill">🐡 Pufferfish</span>
+    <span class="pill">🐢 Turtle</span>
   </div>
-</div>
+  <button class="btn-primary" onclick="show('select')">Explore the Ocean</button>
+  <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
+</section>
 
-<!-- ══ SELECT SCREEN ══ -->
-<div id="selectScreen">
-  <div class="sel-header">
-    <p class="sel-eyebrow">Choose your encounter</p>
-    <h2 class="sel-title">Which creature will you <em>meet</em>?</h2>
-  </div>
-  <div class="creature-list" id="creatureList"></div>
-</div>
+<!-- Select -->
+<section id="select" class="screen">
+  <header>
+    <p>Choose your encounter</p>
+    <h2>Which creature will you <em>meet?</em></h2>
+  </header>
+  <div class="cards" id="cards"></div>
+</section>
 
-<!-- ══ VIEWER SCREEN ══ -->
-<div id="viewerScreen">
-  <div class="vheader">
-    <button class="vback" id="backBtn">← Back</button>
-    <div class="vlogo">Ocean<span>AR</span></div>
-  </div>
+<!-- Viewer -->
+<section id="viewer" class="screen">
+  <nav class="vhead">
+    <button id="backBtn" onclick="show('select')">← Back</button>
+    <span class="logo"><em>Ocean</em>AR</span>
+  </nav>
 
-  <model-viewer
-    id="mv"
-    src=""
-    alt="Sea creature"
-    camera-controls
-    touch-action="pan-y"
-    auto-rotate
-    auto-rotate-delay="800"
-    rotation-per-second="15deg"
+  <model-viewer id="mv" src="" alt=""
+    camera-controls touch-action="pan-y"
+    auto-rotate auto-rotate-delay="800" rotation-per-second="15deg"
     autoplay
-    shadow-intensity="1"
-    shadow-softness="0.5"
-    environment-image="neutral"
-    exposure="1"
-    tone-mapping="commerce"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    ar-scale="auto"
-    xr-environment
-  >
+    shadow-intensity="1" shadow-softness="0.5"
+    environment-image="neutral" exposure="1" tone-mapping="commerce"
+    ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" xr-environment>
     <button slot="ar-button" style="display:none"></button>
   </model-viewer>
 
-  <div class="vfooter">
-    <div class="vhint">Drag to rotate · Pinch to zoom</div>
-    <div id="tapHint">Tap the creature to learn about it</div>
+  <div class="vfoot">
+    <small>Drag to rotate · Pinch to zoom</small>
     <button id="arBtn">📷 &nbsp; Place in Your World</button>
-    <div id="noArMsg">AR not available on this browser.<br>You can still explore the 3D model above.</div>
+    <small style="opacity:0.5">Once placed — tap the creature to learn about it</small>
   </div>
-</div>
+</section>
 
-<!-- ══ INFO CARD ══ -->
-<div id="infoCard">
-  <div class="card-wrap">
-    <div class="card-bar"></div>
-    <div class="card-body">
-      <div class="card-hd">
+<!-- Info Card -->
+<aside id="infoCard">
+  <div class="info-wrap">
+    <div class="info-bar"></div>
+    <div class="info-body">
+      <div class="info-head">
         <div>
-          <div class="card-name" id="cName"></div>
-          <div class="card-sci"  id="cSci"></div>
+          <h2 id="iName"></h2>
+          <small id="iSci"></small>
         </div>
-        <div class="card-em" id="cEmoji"></div>
+        <span class="info-emoji" id="iEmoji"></span>
       </div>
-      <div class="card-hr"></div>
-      <div class="card-grid">
-        <div class="stat"><label>Habitat</label><value id="cHabitat"></value></div>
-        <div class="stat"><label>Diet</label><value id="cDiet"></value></div>
-        <div class="stat"><label>Depth</label><value id="cDepth"></value></div>
-        <div class="stat"><label>Conservation</label><value id="cStatus"></value></div>
+      <hr>
+      <dl class="info-grid">
+        <dt>Habitat</dt>  <dd id="iHabitat"></dd>
+        <dt>Diet</dt>     <dd id="iDiet"></dd>
+        <dt>Depth</dt>    <dd id="iDepth"></dd>
+        <dt>Status</dt>   <dd id="iStatus"></dd>
+      </dl>
+      <div class="fact">
+        <p>✦ Did You Know</p>
+        <p id="iFact"></p>
       </div>
-      <div class="fact-box">
-        <div class="fact-lbl">✦ Did You Know</div>
-        <div class="fact-txt" id="cFact"></div>
-      </div>
-      <button id="closeBtn">— Dismiss —</button>
+      <button id="closeBtn" onclick="closeInfo()">— Dismiss —</button>
     </div>
   </div>
-</div>
+</aside>
 
 <script>
-// ══════════════════════════════════════
-//  CREATURE DATA
-// ══════════════════════════════════════
-const CREATURES = [
-  {
-    id: 'clownfish',
-    name: 'Clownfish',
-    sciName: 'Amphiprioninae',
-    emoji: '🐠',
-    color: '#ff6b35',
-    model: 'models/clownfish.glb',
-    tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
-    habitat: 'Coral Reefs, Indo-Pacific',
-    diet: 'Algae, Plankton, Small Invertebrates',
-    depth: '1 – 15 m',
-    status: 'Least Concern',
-    fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
-  },
-  {
-    id: 'shark',
-    name: 'Swimming Shark',
-    sciName: 'Carcharhinus sp.',
-    emoji: '🦈',
-    color: '#607d8b',
-    model: 'models/swimming_shark.glb',
-    tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
-    habitat: 'Open Ocean & Coastal Waters',
-    diet: 'Fish, Rays, Marine Mammals',
-    depth: '0 – 600 m',
-    status: 'Vulnerable',
-    fact: 'Sharks have electroreceptors called the Ampullae of Lorenzini — they detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away.'
-  },
-  {
-    id: 'octopus',
-    name: 'Octopus',
-    sciName: 'Octopus vulgaris',
-    emoji: '🐙',
-    color: '#c2624a',
-    model: 'models/animal_crossing_new_horizons_octopus.glb',
-    tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
-    habitat: 'Coral Reefs & Rocky Seabeds',
-    diet: 'Crabs, Shrimp, Fish',
-    depth: '0 – 200 m',
-    status: 'Least Concern',
-    fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
-  },
-  {
-    id: 'pufferfish',
-    name: 'Pufferfish',
-    sciName: 'Tetraodontidae',
-    emoji: '🐡',
-    color: '#e8c84a',
-    model: 'models/pufferfish.glb',
-    tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
-    habitat: 'Tropical & Subtropical Seas',
-    diet: 'Algae, Shellfish, Molluscs',
-    depth: '1 – 100 m',
-    status: 'Varies by Species',
-    fact: 'Pufferfish contain tetrodotoxin — a poison 1,200x more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by licensed chefs.'
-  },
-  {
-    id: 'turtle',
-    name: 'Sea Turtle',
-    sciName: 'Cheloniidae',
-    emoji: '🐢',
-    color: '#4a8c5c',
-    model: 'models/happy_cute_sea_turtle.glb',
-    tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
-    habitat: 'Tropical & Subtropical Oceans',
-    diet: 'Seagrass, Algae, Jellyfish',
-    depth: '0 – 30 m',
-    status: 'Endangered',
-    fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — and return to the exact same beach where they were born to lay their eggs.'
-  }
-];
+  // ── Data ──
+  const CREATURES = [
+    {
+      name: 'Clownfish', sci: 'Amphiprioninae', emoji: '🐠', color: '#ff6b35',
+      model: 'models/clownfish.glb',
+      tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
+      habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
+      depth: '1–15 m', status: 'Least Concern',
+      fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
+    },
+    {
+      name: 'Swimming Shark', sci: 'Carcharhinus sp.', emoji: '🦈', color: '#607d8b',
+      model: 'models/swimming_shark.glb',
+      tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
+      habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
+      depth: '0–600 m', status: 'Vulnerable',
+      fact: 'Sharks detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away using special organs called the Ampullae of Lorenzini.'
+    },
+    {
+      name: 'Octopus', sci: 'Octopus vulgaris', emoji: '🐙', color: '#c2624a',
+      model: 'models/animal_crossing_new_horizons_octopus.glb',
+      tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
+      habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
+      depth: '0–200 m', status: 'Least Concern',
+      fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
+    },
+    {
+      name: 'Pufferfish', sci: 'Tetraodontidae', emoji: '🐡', color: '#e8c84a',
+      model: 'models/pufferfish.glb',
+      tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
+      habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
+      depth: '1–100 m', status: 'Varies by Species',
+      fact: 'Pufferfish contain tetrodotoxin — 1,200× more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by specially licensed chefs.'
+    },
+    {
+      name: 'Sea Turtle', sci: 'Cheloniidae', emoji: '🐢', color: '#4a8c5c',
+      model: 'models/happy_cute_sea_turtle.glb',
+      tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
+      habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
+      depth: '0–30 m', status: 'Endangered',
+      fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — returning to the exact same beach where they were born to lay their eggs.'
+    }
+  ];
 
-let currentCreature = null;
-let infoOpen = false;
-
-// ══════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  makeBubbles();
-  buildCards();
-});
-
-function makeBubbles() {
-  const el = document.getElementById('bubblesEl');
-  for (let i = 0; i < 20; i++) {
-    const b = document.createElement('div');
-    b.className = 'bubble';
-    const s = Math.random()*26+8;
-    b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*8+6}s;animation-delay:${Math.random()*8}s;opacity:${Math.random()*0.3+0.07};`;
-    el.appendChild(b);
-  }
-}
-
-// ══════════════════════════════════════
-//  BUILD CREATURE CARDS
-// ══════════════════════════════════════
-function buildCards() {
-  const list = document.getElementById('creatureList');
+  // ── Build Cards ──
+  const cards = document.getElementById('cards');
   CREATURES.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'c-card';
-    card.innerHTML = `
-      <div class="c-card-bar" style="background:${c.color}"></div>
-      <div class="c-card-inner">
-        <div class="c-emoji">${c.emoji}</div>
-        <div class="c-info">
-          <div class="c-name">${c.name}</div>
-          <div class="c-sci">${c.sciName}</div>
-          <div class="c-tags">${c.tags.map(t=>`<span class="c-tag">${t}</span>`).join('')}</div>
+    const el = document.createElement('article');
+    el.innerHTML = `
+      <div class="card-stripe" style="background:${c.color}"></div>
+      <div class="card-body">
+        <span class="card-emoji">${c.emoji}</span>
+        <div class="card-info">
+          <h3>${c.name}</h3>
+          <small>${c.sci}</small>
+          <div class="tags">${c.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
         </div>
-        <div class="c-arrow">→</div>
-      </div>
-    `;
-    card.addEventListener('click', () => openViewer(c));
-    list.appendChild(card);
+        <span>→</span>
+      </div>`;
+    el.addEventListener('click', () => openViewer(c));
+    cards.appendChild(el);
   });
-}
 
-// ══════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════
-document.getElementById('splashBtn').addEventListener('click', () => {
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('selectScreen').classList.add('show');
-});
+  // ── Screen Navigation ──
+  const screens = document.querySelectorAll('.screen');
+  function show(id) {
+    screens.forEach(s => s.classList.toggle('active', s.id === id));
+    closeInfo();
+  }
 
-document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('viewerScreen').classList.remove('show');
-  document.getElementById('selectScreen').classList.add('show');
-  closeInfo();
-});
-
-// ══════════════════════════════════════
-//  OPEN VIEWER
-// ══════════════════════════════════════
-function openViewer(creature) {
-  currentCreature = creature;
-  document.getElementById('selectScreen').classList.remove('show');
-  document.getElementById('viewerScreen').classList.add('show');
-  closeInfo();
-
+  // ── Viewer ──
   const mv = document.getElementById('mv');
-  mv.src = creature.model;
-  mv.alt = creature.name;
+  let infoOpen = false;
 
-  // Populate info card
-  document.getElementById('cName').textContent    = creature.name;
-  document.getElementById('cSci').textContent     = creature.sciName;
-  document.getElementById('cEmoji').textContent   = creature.emoji;
-  document.getElementById('cHabitat').textContent = creature.habitat;
-  document.getElementById('cDiet').textContent    = creature.diet;
-  document.getElementById('cDepth').textContent   = creature.depth;
-  document.getElementById('cStatus').textContent  = creature.status;
-  document.getElementById('cFact').textContent    = creature.fact;
-}
+  function openViewer(c) {
+    show('viewer');
+    mv.src = c.model;
+    mv.alt = c.name;
 
-// ══════════════════════════════════════
-//  MODEL VIEWER EVENTS
-// ══════════════════════════════════════
-const mv = document.getElementById('mv');
-
-mv.addEventListener('load', () => {
-  // Auto-play first available animation
-  const anims = mv.availableAnimations;
-  if (anims && anims.length > 0) {
-    mv.animationName = anims[0];
-    mv.play();
+    // Fill info card
+    document.getElementById('iName').textContent    = c.name;
+    document.getElementById('iSci').textContent     = c.sci;
+    document.getElementById('iEmoji').textContent   = c.emoji;
+    document.getElementById('iHabitat').textContent = c.habitat;
+    document.getElementById('iDiet').textContent    = c.diet;
+    document.getElementById('iDepth').textContent   = c.depth;
+    document.getElementById('iStatus').textContent  = c.status;
+    document.getElementById('iFact').textContent    = c.fact;
   }
-  // Check AR support
-  if (!mv.canActivateAR) {
-    document.getElementById('arBtn').style.display = 'none';
-    document.getElementById('noArMsg').style.display = 'block';
-  } else {
-    document.getElementById('arBtn').style.display = 'flex';
-    document.getElementById('noArMsg').style.display = 'none';
+
+  // Auto-play animation when model loads
+  mv.addEventListener('load', () => {
+    const anim = mv.availableAnimations;
+    if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
+    document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
+  });
+
+  // AR button
+  document.getElementById('arBtn').addEventListener('click', () => mv.activateAR());
+
+  // Tap model in AR mode → toggle info
+  mv.addEventListener('ar-status', e => {
+    if (e.detail.status === 'session-started') {
+      mv.addEventListener('click', onARTap);
+    } else {
+      mv.removeEventListener('click', onARTap);
+      closeInfo();
+    }
+  });
+
+  function onARTap(e) {
+    if (e.target.closest('#arBtn')) return;
+    ripple(e.clientX, e.clientY);
+    infoOpen ? closeInfo() : openInfo();
   }
-});
 
-// AR button
-document.getElementById('arBtn').addEventListener('click', () => {
-  mv.activateAR();
-});
+  function openInfo()  {
+    document.getElementById('infoCard').classList.add('open');
+    infoOpen = true;
+  }
 
-// ══════════════════════════════════════
-//  TAP → INFO CARD
-// ══════════════════════════════════════
-mv.addEventListener('click', (e) => {
-  if (e.target.closest('#arBtn')) return;
-  spawnRipple(e.clientX, e.clientY);
-  infoOpen ? closeInfo() : openInfo();
-});
+  function closeInfo() {
+    document.getElementById('infoCard').classList.remove('open');
+    infoOpen = false;
+  }
 
-function openInfo() {
-  document.getElementById('infoCard').classList.add('visible');
-  document.getElementById('tapHint').style.opacity = '0';
-  infoOpen = true;
-}
-
-function closeInfo() {
-  document.getElementById('infoCard').classList.remove('visible');
-  document.getElementById('tapHint').style.opacity = '';
-  infoOpen = false;
-}
-
-document.getElementById('closeBtn').addEventListener('click', closeInfo);
-
-// ══════════════════════════════════════
-//  RIPPLE
-// ══════════════════════════════════════
-function spawnRipple(x, y) {
-  const r = document.createElement('div');
-  r.className = 'ripple';
-  r.style.left = x + 'px';
-  r.style.top  = y + 'px';
-  document.body.appendChild(r);
-  setTimeout(() => r.remove(), 700);
-}
+  // ── Ripple ──
+  function ripple(x, y) {
+    const r = document.createElement('div');
+    r.className = 'ripple';
+    r.style.cssText = `left:${x}px;top:${y}px`;
+    document.body.appendChild(r);
+    setTimeout(() => r.remove(), 650);
+  }
 </script>
 </body>
 </html>
