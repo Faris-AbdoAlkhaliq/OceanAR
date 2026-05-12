@@ -1,590 +1,617 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>OceanAR — Immersive Sea Experience</title>
-
-  <!-- Google Model Viewer -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OceanAR</title>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap');
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --deep:  #020c18;
-      --ocean: #0a2540;
-      --teal:  #1ab3c8;
-      --foam:  #a8f0f5;
-      --glow:  #00ffe7;
-      --text:  #d8f4f7;
+      --bg:   #020c18;
+      --teal: #1ab3c8;
+      --foam: #a8f0f5;
+      --glow: #00ffe7;
+      --serif: 'Georgia', serif;
+      --mono:  'Courier New', monospace;
     }
 
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Space Mono',monospace; background:var(--deep); color:var(--text); overflow:hidden; height:100vh; width:100vw; }
-
-    /* ══════════════════════════════
-       LOADING
-    ══════════════════════════════ */
-    #loading {
-      position:fixed; inset:0; z-index:3000; background:var(--deep);
-      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1.2rem;
-      transition:opacity 0.6s ease;
-    }
-    #loading.hidden { opacity:0; pointer-events:none; }
-    .fish-swim { font-size:2.5rem; animation:swim 1s ease infinite alternate; }
-    @keyframes swim { from{transform:translateX(-22px) rotate(-5deg)} to{transform:translateX(22px) rotate(5deg)} }
-    .load-label { font-size:0.58rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--teal); }
-    .load-track { width:140px; height:1px; background:rgba(26,179,200,0.15); position:relative; overflow:hidden; }
-    .load-track::after {
-      content:''; position:absolute; inset:0; background:var(--glow); animation:fill 1.5s ease infinite;
-    }
-    @keyframes fill {
-      0%{transform:scaleX(0);transform-origin:left}
-      50%{transform:scaleX(1);transform-origin:left}
-      51%{transform:scaleX(1);transform-origin:right}
-      100%{transform:scaleX(0);transform-origin:right}
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--foam);
+      font-family: var(--mono);
     }
 
-    /* ══════════════════════════════
-       SPLASH
-    ══════════════════════════════ */
+    /* ── Shared Utilities ── */
+    .screen {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .screen.active { display: flex; }
+
+    button {
+      font-family: var(--mono);
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    /* ── Splash Screen ── */
     #splash {
-      position:fixed; inset:0; z-index:2000;
-      display:flex; flex-direction:column; align-items:center; justify-content:center;
-      background:radial-gradient(ellipse at 50% 65%, #0a3a5a 0%, #020c18 70%);
-      transition:opacity 0.7s ease;
+      background: radial-gradient(ellipse at 50% 65%, #0a3a5a, var(--bg));
+      text-align: center;
+      padding: 2rem;
+      gap: 1rem;
     }
-    #splash.hidden { opacity:0; pointer-events:none; }
 
-    .bubbles { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
-    .bubble {
-      position:absolute; bottom:-40px; border-radius:50%;
-      background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2), rgba(26,179,200,0.07));
-      border:1px solid rgba(26,179,200,0.2); animation:rise linear infinite;
+    #splash h1 {
+      font-family: var(--serif);
+      font-size: clamp(3rem, 12vw, 6rem);
+      font-weight: 300;
+      color: var(--foam);
+      line-height: 1;
     }
-    @keyframes rise { to{transform:translateY(-110vh);opacity:0;} }
 
-    .splash-inner { position:relative; z-index:2; text-align:center; padding:2rem; max-width:400px; }
-    .eyebrow { font-size:0.6rem; letter-spacing:0.35em; color:var(--teal); text-transform:uppercase; margin-bottom:1rem; opacity:0.8; }
-    .s-title {
-      font-family:'Cormorant Garamond',serif;
-      font-size:clamp(3rem,11vw,6rem); font-weight:300; line-height:0.95;
-      color:var(--foam); text-shadow:0 0 60px rgba(0,255,231,0.2); margin-bottom:0.3rem;
+    #splash h1 em {
+      font-style: italic;
+      color: var(--glow);
     }
-    .s-title em { font-style:italic; color:var(--glow); }
-    .s-sub {
-      font-family:'Cormorant Garamond',serif; font-size:clamp(0.9rem,2.5vw,1.15rem);
-      font-style:italic; color:rgba(168,240,245,0.5); margin-bottom:2rem;
-    }
-    #exploreBtn {
-      position:relative; overflow:hidden; background:transparent;
-      border:1.5px solid var(--glow); color:var(--glow);
-      font-family:'Space Mono',monospace; font-size:0.7rem;
-      letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.5rem; cursor:pointer; transition:color 0.3s;
-    }
-    #exploreBtn::before {
-      content:''; position:absolute; inset:0; background:var(--glow);
-      transform:scaleX(0); transform-origin:left; transition:transform 0.3s; z-index:-1;
-    }
-    #exploreBtn:hover { color:var(--deep); }
-    #exploreBtn:hover::before { transform:scaleX(1); }
-    .s-note { margin-top:1rem; font-size:0.5rem; line-height:2; color:rgba(168,240,245,0.25); }
-    .s-note span { color:var(--teal); }
 
-    /* ══════════════════════════════
-       CREATURE SELECTION SCREEN
-    ══════════════════════════════ */
-    #selectScreen {
-      position:fixed; inset:0; z-index:1800;
-      display:none; flex-direction:column;
-      background:var(--deep);
-      overflow-y:auto;
+    #splash p {
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--foam) 50%, transparent);
+      line-height: 2;
     }
-    #selectScreen.show { display:flex; }
 
-    .select-header {
-      padding:1.5rem 1.5rem 0;
-      background:linear-gradient(to bottom, rgba(2,12,24,1), transparent);
-      position:sticky; top:0; z-index:2;
+    #splash p b { color: var(--teal); font-weight: 400; }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
     }
-    .select-eyebrow { font-size:0.55rem; letter-spacing:0.3em; color:var(--teal); text-transform:uppercase; margin-bottom:0.3rem; opacity:0.7; }
-    .select-title { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; color:var(--foam); margin-bottom:1.2rem; }
-    .select-title em { font-style:italic; color:var(--glow); }
 
-    .creature-list { padding:1rem 1.5rem 2rem; display:flex; flex-direction:column; gap:1rem; }
-
-    .creature-card {
-      background:linear-gradient(135deg, rgba(10,37,64,0.8), rgba(2,12,24,0.9));
-      border:1px solid rgba(26,179,200,0.2); border-radius:2px; overflow:hidden;
-      cursor:pointer; transition:all 0.3s ease; position:relative;
+    .pill {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+      padding: 0.3rem 0.7rem;
+      background: color-mix(in srgb, var(--teal) 5%, transparent);
     }
-    .creature-card:hover, .creature-card:active {
-      border-color:rgba(0,255,231,0.5);
-      box-shadow:0 0 30px rgba(0,255,231,0.08);
-      transform:translateY(-2px);
+
+    .btn-primary {
+      width: 100%;
+      max-width: 320px;
+      padding: 0.9rem;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--glow);
+      border: 1.5px solid var(--glow);
+      background: none;
+      transition: background 0.3s, color 0.3s;
     }
-    .card-accent-bar { height:2px; }
 
-    .card-content { display:flex; align-items:center; gap:1rem; padding:1.1rem; }
-    .card-emoji-big { font-size:3rem; filter:drop-shadow(0 0 12px rgba(0,255,231,0.3)); flex-shrink:0; }
+    .btn-primary:hover {
+      background: var(--glow);
+      color: var(--bg);
+    }
 
-    .card-info { flex:1; }
-    .card-name { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:300; color:var(--foam); line-height:1; margin-bottom:0.15rem; }
-    .card-sci  { font-family:'Cormorant Garamond',serif; font-size:0.7rem; font-style:italic; color:rgba(168,240,245,0.4); margin-bottom:0.5rem; }
-    .card-tags { display:flex; gap:0.4rem; flex-wrap:wrap; }
+    /* ── Select Screen ── */
+    #select {
+      background: var(--bg);
+      justify-content: flex-start;
+      padding: 2rem 1.5rem;
+      gap: 1rem;
+      overflow-y: auto;
+    }
+
+    #select header { width: 100%; }
+
+    #select header p {
+      font-size: 0.55rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--teal);
+      opacity: 0.7;
+    }
+
+    #select header h2 {
+      font-family: var(--serif);
+      font-size: 1.9rem;
+      font-weight: 300;
+      color: var(--foam);
+    }
+
+    #select header h2 em { color: var(--glow); }
+
+    /* Creature cards */
+    .cards { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
+
+    article {
+      width: 100%;
+      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+      background: color-mix(in srgb, #0a2540 80%, transparent);
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+      overflow: hidden;
+    }
+
+    article:active {
+      border-color: var(--glow);
+      transform: scale(0.99);
+    }
+
+    .card-stripe { height: 2px; }
+
+    .card-body {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .card-emoji { font-size: 2.8rem; flex-shrink: 0; }
+
+    .card-info { flex: 1; }
+
+    .card-info h3 {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      font-weight: 300;
+      color: var(--foam);
+      line-height: 1;
+    }
+
+    .card-info small {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.7rem;
+      color: color-mix(in srgb, var(--foam) 40%, transparent);
+      display: block;
+      margin: 0.15rem 0 0.4rem;
+    }
+
+    .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
     .tag {
-      font-size:0.45rem; letter-spacing:0.12em; text-transform:uppercase;
-      padding:0.2rem 0.5rem; border-radius:10px;
-      background:rgba(26,179,200,0.08); border:1px solid rgba(26,179,200,0.2); color:var(--teal);
+      font-size: 0.42rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--teal);
+      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+      padding: 0.15rem 0.45rem;
     }
 
-    .card-arrow { font-size:1.2rem; color:rgba(0,255,231,0.4); flex-shrink:0; }
-
-    /* ══════════════════════════════
-       3D PREVIEW + AR SCREEN
-    ══════════════════════════════ */
-    #viewerScreen {
-      position:fixed; inset:0; z-index:1600;
-      display:none; flex-direction:column;
-      background:var(--deep);
+    /* ── Viewer Screen ── */
+    #viewer {
+      background: var(--bg);
+      justify-content: stretch;
+      padding: 0;
     }
-    #viewerScreen.show { display:flex; }
 
-    .viewer-header {
-      position:absolute; top:0; left:0; right:0; z-index:10;
-      padding:1rem 1.2rem;
-      display:flex; justify-content:space-between; align-items:center;
-      background:linear-gradient(to bottom, rgba(2,12,24,0.9), transparent);
-    }
-    .back-btn {
-      background:transparent; border:1px solid rgba(168,240,245,0.2);
-      color:rgba(168,240,245,0.5); font-family:'Space Mono',monospace;
-      font-size:0.55rem; letter-spacing:0.15em; text-transform:uppercase;
-      padding:0.5rem 0.9rem; cursor:pointer; transition:all 0.2s;
-    }
-    .back-btn:hover { border-color:var(--teal); color:var(--teal); }
-    .viewer-title { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--foam); }
-
-    /* model-viewer fills screen */
-    #mv {
-      width:100%; flex:1;
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      flex: 1;
       --progress-bar-color: var(--glow);
-      --progress-mask: transparent;
-      background:radial-gradient(ellipse at 50% 60%, #0a2a4a 0%, #020c18 70%);
+      background: radial-gradient(ellipse at 50% 55%, #071e36, var(--bg));
     }
 
-    /* custom AR button */
+    /* Viewer header */
+    .vhead {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 20;
+      padding: 1rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 90%, transparent), transparent);
+      pointer-events: none;
+    }
+
+    .vhead .logo {
+      font-family: var(--serif);
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--foam);
+    }
+
+    .vhead .logo em { color: var(--glow); }
+
+    #backBtn {
+      pointer-events: all;
+      font-size: 0.52rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--foam) 50%, transparent);
+      border: 1px solid color-mix(in srgb, var(--foam) 20%, transparent);
+      padding: 0.45rem 0.8rem;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #backBtn:hover { color: var(--teal); border-color: var(--teal); }
+
+    /* Viewer footer */
+    .vfoot {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 20;
+      padding: 0.8rem 1.2rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent) 60%, transparent);
+    }
+
+    .vfoot small {
+      font-size: 0.48rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--foam) 30%, transparent);
+      animation: pulse 3s ease infinite;
+    }
+
+    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
     #arBtn {
-      position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      background:var(--glow); color:var(--deep);
-      font-family:'Space Mono',monospace; font-size:0.65rem;
-      letter-spacing:0.2em; text-transform:uppercase;
-      padding:0.9rem 2.2rem; border:none; cursor:pointer; font-weight:700;
-      display:flex; align-items:center; gap:0.6rem;
-      box-shadow:0 0 30px rgba(0,255,231,0.3);
-      z-index:10;
-    }
-    #arBtn .ar-icon { font-size:1rem; }
-
-    .viewer-hint {
-      position:absolute; bottom:5.5rem; left:50%; transform:translateX(-50%);
-      font-size:0.5rem; letter-spacing:0.15em; text-transform:uppercase;
-      color:rgba(168,240,245,0.3); white-space:nowrap; pointer-events:none; z-index:10;
+      width: min(320px, 90vw);
+      padding: 0.85rem;
+      font-size: 0.65rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--bg);
+      background: var(--glow);
+      box-shadow: 0 0 30px color-mix(in srgb, var(--glow) 35%, transparent);
     }
 
-    /* ══════════════════════════════
-       FLOATING INFO LABEL
-       (shown in AR via model-viewer slot)
-    ══════════════════════════════ */
-    #floatLabel {
-      position:absolute;
-      bottom:calc(50% + 60px);
-      left:50%; transform:translateX(-50%);
-      z-index:20; pointer-events:none;
-      display:none; flex-direction:column; align-items:center;
-      animation:labelIn 0.4s cubic-bezier(0.16,1,0.3,1) forwards;
-    }
-    #floatLabel.visible { display:flex; }
-
-    @keyframes labelIn {
-      from { opacity:0; transform:translateX(-50%) translateY(20px); }
-      to   { opacity:1; transform:translateX(-50%) translateY(0); }
+    /* ── Info Card ── */
+    #infoCard {
+      position: fixed;
+      bottom: -100%;
+      left: 50%;
+      translate: -50% 0;
+      width: min(420px, 93vw);
+      z-index: 600;
+      pointer-events: none;
+      transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .fl-card {
-      background:rgba(2,12,24,0.92);
-      border:1px solid rgba(0,255,231,0.4);
-      backdrop-filter:blur(20px);
-      padding:1rem 1.2rem;
-      min-width:220px; max-width:280px;
-      text-align:center;
-      box-shadow:0 8px 32px rgba(0,0,0,0.6), 0 0 20px rgba(0,255,231,0.1);
+    #infoCard.open {
+      bottom: 1.5rem;
+      pointer-events: all;
     }
-    .fl-emoji  { font-size:1.8rem; display:block; margin-bottom:0.4rem; filter:drop-shadow(0 0 8px rgba(0,255,231,0.4)); }
-    .fl-name   { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:300; color:var(--foam); line-height:1; margin-bottom:0.1rem; }
-    .fl-sci    { font-family:'Cormorant Garamond',serif; font-size:0.65rem; font-style:italic; color:rgba(168,240,245,0.4); margin-bottom:0.6rem; }
-    .fl-hr     { height:1px; background:linear-gradient(90deg,transparent,rgba(0,255,231,0.35),transparent); margin-bottom:0.6rem; }
-    .fl-fact   { font-size:0.58rem; line-height:1.8; color:rgba(168,240,245,0.75); margin-bottom:0.6rem; letter-spacing:0.03em; }
-    .fl-loc-row{ display:flex; align-items:center; justify-content:center; gap:0.3rem; margin-bottom:0.6rem; }
-    .fl-loc-icon{ font-size:0.7rem; }
-    .fl-loc    { font-size:0.48rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal); }
-    .fl-close  {
-      font-size:0.48rem; letter-spacing:0.15em; text-transform:uppercase;
-      color:rgba(168,240,245,0.3); cursor:pointer; pointer-events:all;
-      border:1px solid rgba(168,240,245,0.1); padding:0.3rem 0.7rem;
-      transition:all 0.2s;
+
+    .info-wrap {
+      background: color-mix(in srgb, #0a2540 97%, transparent);
+      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 60px color-mix(in srgb, black 70%, transparent);
+      overflow: hidden;
     }
-    .fl-close:hover { color:var(--teal); border-color:var(--teal); }
 
-    .fl-line { width:1px; height:24px; background:linear-gradient(to bottom, rgba(0,255,231,0.4), transparent); }
-    .fl-dot  { width:7px; height:7px; border-radius:50%; background:var(--glow); box-shadow:0 0 8px var(--glow); margin-top:-2px; }
+    .info-bar { height: 3px; background: linear-gradient(90deg, var(--glow), var(--teal), transparent); }
 
-    /* tap ripple */
+    .info-body { padding: 1.4rem; }
+
+    .info-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.9rem;
+    }
+
+    .info-head h2 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      font-weight: 300;
+      color: var(--foam);
+      line-height: 1;
+    }
+
+    .info-head small {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.75rem;
+      color: color-mix(in srgb, var(--foam) 38%, transparent);
+      display: block;
+      margin-top: 0.2rem;
+    }
+
+    .info-emoji { font-size: 2.5rem; }
+
+    hr { border: none; border-top: 1px solid color-mix(in srgb, var(--teal) 30%, transparent); margin-bottom: 0.9rem; }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.7rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .info-grid dt {
+      font-size: 0.44rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 0.12rem;
+    }
+
+    .info-grid dd { font-size: 0.68rem; color: var(--foam); line-height: 1.4; }
+
+    .fact {
+      background: color-mix(in srgb, var(--glow) 4%, transparent);
+      border-left: 2px solid var(--glow);
+      padding: 0.7rem 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .fact p:first-child {
+      font-size: 0.44rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--glow);
+      margin-bottom: 0.25rem;
+    }
+
+    .fact p:last-child {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 0.88rem;
+      color: color-mix(in srgb, var(--foam) 80%, transparent);
+      line-height: 1.55;
+    }
+
+    #closeBtn {
+      width: 100%;
+      padding: 0.65rem;
+      font-size: 0.5rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--foam) 40%, transparent);
+      border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    #closeBtn:hover { color: var(--teal); border-color: var(--teal); }
+
+    /* ── Tap Ripple ── */
     .ripple {
-      position:fixed; width:55px; height:55px; border-radius:50%;
-      border:2px solid var(--glow); pointer-events:none; z-index:500;
-      transform:translate(-50%,-50%) scale(0);
-      animation:rippleOut 0.65s ease forwards;
-    }
-    @keyframes rippleOut {
-      0%  { transform:translate(-50%,-50%) scale(0);   opacity:1; }
-      100%{ transform:translate(-50%,-50%) scale(2.8); opacity:0; }
+      position: fixed;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      border: 2px solid var(--glow);
+      pointer-events: none;
+      z-index: 700;
+      translate: -50% -50%;
+      animation: ripple 0.6s ease forwards;
     }
 
-    /* no-ar fallback */
-    .no-ar-note {
-      position:absolute; bottom:2rem; left:50%; transform:translateX(-50%);
-      font-size:0.5rem; letter-spacing:0.1em; color:rgba(168,240,245,0.25);
-      text-align:center; max-width:260px; line-height:1.8; z-index:10;
+    @keyframes ripple {
+      from { scale: 0; opacity: 1; }
+      to   { scale: 2.5; opacity: 0; }
     }
   </style>
 </head>
 <body>
 
-<!-- ── LOADING ── -->
-<div id="loading">
-  <div class="fish-swim">🌊</div>
-  <div class="load-label">Preparing the ocean</div>
-  <div class="load-track"></div>
-</div>
-
-<!-- ── SPLASH ── -->
-<div id="splash">
-  <div class="bubbles" id="bubblesEl"></div>
-  <div class="splash-inner">
-    <p class="eyebrow">CPIS360 — Immersive AR Experience</p>
-    <h1 class="s-title">Ocean<em>AR</em></h1>
-    <p class="s-sub">Real sea creatures floating in your world</p>
-    <button id="exploreBtn">Explore the Ocean</button>
-    <p class="s-note">
-      Works on <span>iOS Safari</span> &amp; <span>Android Chrome</span>.<br>
-      No app needed — just your browser &amp; camera.<br>
-      Tap a creature to place it in your real space.
-    </p>
+<!-- Splash -->
+<section id="splash" class="screen active">
+  <p style="font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--teal);opacity:0.8">CPIS360 — Immersive AR Experience</p>
+  <h1><em>Ocean</em>AR</h1>
+  <p>Real sea creatures in your world</p>
+  <div class="pills">
+    <span class="pill">🐠 Clownfish</span>
+    <span class="pill">🦈 Shark</span>
+    <span class="pill">🐙 Octopus</span>
+    <span class="pill">🐡 Pufferfish</span>
+    <span class="pill">🐢 Turtle</span>
   </div>
-</div>
+  <button class="btn-primary" onclick="show('select')">Explore the Ocean</button>
+  <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
+</section>
 
-<!-- ── CREATURE SELECTION ── -->
-<div id="selectScreen">
-  <div class="select-header">
-    <p class="select-eyebrow">Choose your encounter</p>
-    <h2 class="select-title">Which creature will you <em>meet</em>?</h2>
-  </div>
-  <div class="creature-list" id="creatureList">
-    <!-- cards injected by JS -->
-  </div>
-</div>
+<!-- Select -->
+<section id="select" class="screen">
+  <header>
+    <p>Choose your encounter</p>
+    <h2>Which creature will you <em>meet?</em></h2>
+  </header>
+  <div class="cards" id="cards"></div>
+</section>
 
-<!-- ── 3D VIEWER + AR ── -->
-<div id="viewerScreen">
-  <div class="viewer-header">
-    <button class="back-btn" id="backBtn">← Back</button>
-    <div class="viewer-title" id="viewerTitle">School of Fish</div>
-  </div>
+<!-- Viewer -->
+<section id="viewer" class="screen">
+  <nav class="vhead">
+    <button id="backBtn" onclick="show('select')">← Back</button>
+    <span class="logo"><em>Ocean</em>AR</span>
+  </nav>
 
-  <!-- model-viewer: handles 3D preview + native AR -->
-  <model-viewer
-    id="mv"
-    src=""
-    alt="Sea creature"
-    shadow-intensity="1"
-    camera-controls
-    touch-action="pan-y"
-    auto-rotate
-    auto-rotate-delay="500"
-    rotation-per-second="20deg"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    ar-scale="auto"
-    xr-environment
-  >
-    <!-- custom AR button slot -->
-    <button slot="ar-button" id="arBtn">
-      <span class="ar-icon">📷</span> Place in Your World
-    </button>
-
-    <!-- floating label shown on tap (inside model-viewer for AR overlay) -->
-    <div id="floatLabel" slot="hotspot-0">
-      <div class="fl-card">
-        <span class="fl-emoji" id="flEmoji">🐠</span>
-        <div class="fl-name"  id="flName">School of Fish</div>
-        <div class="fl-sci"   id="flSci">Atheriniformes spp.</div>
-        <div class="fl-hr"></div>
-        <div class="fl-fact"  id="flFact">Loading…</div>
-        <div class="fl-loc-row">
-          <span class="fl-loc-icon">📍</span>
-          <span class="fl-loc" id="flLoc">Locating…</span>
-        </div>
-        <div class="fl-close" id="flClose">✕ Dismiss</div>
-      </div>
-      <div class="fl-line"></div>
-      <div class="fl-dot"></div>
-    </div>
-
+  <model-viewer id="mv" src="" alt=""
+    camera-controls touch-action="pan-y"
+    auto-rotate auto-rotate-delay="800" rotation-per-second="15deg"
+    autoplay
+    shadow-intensity="1" shadow-softness="0.5"
+    environment-image="neutral" exposure="1" tone-mapping="commerce"
+    ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" xr-environment>
+    <button slot="ar-button" style="display:none"></button>
   </model-viewer>
 
-  <div class="viewer-hint">Drag to rotate · Pinch to zoom · Tap creature for info</div>
-  <div class="no-ar-note" id="noArNote" style="display:none">
-    AR not available on this device/browser.<br>
-    You can still explore the 3D model above.
+  <div class="vfoot">
+    <small>Drag to rotate · Pinch to zoom · Tap creature for info</small>
+    <button id="arBtn">📷 &nbsp; Place in Your World</button>
   </div>
-</div>
+</section>
+
+<!-- Info Card -->
+<aside id="infoCard">
+  <div class="info-wrap">
+    <div class="info-bar"></div>
+    <div class="info-body">
+      <div class="info-head">
+        <div>
+          <h2 id="iName"></h2>
+          <small id="iSci"></small>
+        </div>
+        <span class="info-emoji" id="iEmoji"></span>
+      </div>
+      <hr>
+      <dl class="info-grid">
+        <dt>Habitat</dt>  <dd id="iHabitat"></dd>
+        <dt>Diet</dt>     <dd id="iDiet"></dd>
+        <dt>Depth</dt>    <dd id="iDepth"></dd>
+        <dt>Status</dt>   <dd id="iStatus"></dd>
+      </dl>
+      <div class="fact">
+        <p>✦ Did You Know</p>
+        <p id="iFact"></p>
+      </div>
+      <button id="closeBtn" onclick="closeInfo()">— Dismiss —</button>
+    </div>
+  </div>
+</aside>
 
 <script>
-// ══════════════════════════════════════════════════
-//  CREATURE DATABASE
-// ══════════════════════════════════════════════════
-const CREATURES = [
-  {
-    id: 'fish',
-    name: 'School of Fish',
-    sciName: 'Atheriniformes spp.',
-    emoji: '🐠',
-    color: '#ff6b35',
-    modelSrc: 'models/school_of_fish.glb',
-    iosSrc: '',           // add .usdz path here if you have one
-    habitat: 'Coral Reefs, Open Ocean',
-    diet: 'Plankton, Small Invertebrates',
-    depth: '0–200 m',
-    status: 'Least Concern',
-    tags: ['Coral Reef', 'Schooling', 'Indo-Pacific'],
-    fact: 'Fish school in tight formations to confuse predators — the group moves as one living organism, making it nearly impossible to target a single fish.',
-    naturalHabitat: 'Indo-Pacific Coral Reefs'
-  },
-  {
-    id: 'shark',
-    name: 'Swimming Shark',
-    sciName: 'Carcharhinus sp.',
-    emoji: '🦈',
-    color: '#607d8b',
-    modelSrc: 'models/swimming_shark.glb',
-    iosSrc: '',
-    habitat: 'Open Ocean, Coastal Waters',
-    diet: 'Fish, Rays, Marine Mammals',
-    depth: '0–600 m',
-    status: 'Vulnerable',
-    tags: ['Apex Predator', 'Open Ocean', 'Ancient'],
-    fact: 'Sharks have electroreceptors called the Ampullae of Lorenzini — they can detect the faint electrical field produced by the heartbeat of hidden prey.',
-    naturalHabitat: 'Warm Coastal & Open Oceans Worldwide'
-  }
-];
-
-let currentCreature = null;
-let labelVisible = false;
-let userLocation = 'Locating…';
-
-// ══════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', () => {
-  makeBubbles();
-  buildCreatureCards();
-  startLocationFetch();
-  setTimeout(() => document.getElementById('loading').classList.add('hidden'), 1500);
-});
-
-function makeBubbles() {
-  const el = document.getElementById('bubblesEl');
-  for (let i = 0; i < 22; i++) {
-    const b = document.createElement('div');
-    b.className = 'bubble';
-    const s = Math.random()*26+8;
-    b.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${Math.random()*8+6}s;animation-delay:${Math.random()*8}s;opacity:${Math.random()*0.3+0.07};`;
-    el.appendChild(b);
-  }
-}
-
-// ══════════════════════════════════════════════════
-//  BUILD CREATURE CARDS
-// ══════════════════════════════════════════════════
-function buildCreatureCards() {
-  const list = document.getElementById('creatureList');
-  CREATURES.forEach(c => {
-    const card = document.createElement('div');
-    card.className = 'creature-card';
-    card.innerHTML = `
-      <div class="card-accent-bar" style="background:${c.color}"></div>
-      <div class="card-content">
-        <div class="card-emoji-big">${c.emoji}</div>
-        <div class="card-info">
-          <div class="card-name">${c.name}</div>
-          <div class="card-sci">${c.sciName}</div>
-          <div class="card-tags">
-            ${c.tags.map(t => `<span class="tag">${t}</span>`).join('')}
-          </div>
-        </div>
-        <div class="card-arrow">→</div>
-      </div>
-    `;
-    card.addEventListener('click', () => openViewer(c));
-    list.appendChild(card);
-  });
-}
-
-// ══════════════════════════════════════════════════
-//  LOCATION (reverse geocode)
-// ══════════════════════════════════════════════════
-function startLocationFetch() {
-  if (!navigator.geolocation) return;
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude: lat, longitude: lng } = pos.coords;
-      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`)
-        .then(r => r.json())
-        .then(d => {
-          const a = d.address;
-          const area = a.suburb || a.neighbourhood || a.city_district || a.city || a.town || 'your area';
-          const country = a.country || '';
-          userLocation = `Near ${area}, ${country}`;
-          document.getElementById('flLoc').textContent = userLocation;
-        })
-        .catch(() => {
-          userLocation = `${lat.toFixed(3)}°N, ${lng.toFixed(3)}°E`;
-          document.getElementById('flLoc').textContent = userLocation;
-        });
+  // ── Data ──
+  const CREATURES = [
+    {
+      name: 'Clownfish', sci: 'Amphiprioninae', emoji: '🐠', color: '#ff6b35',
+      model: 'models/clownfish.glb',
+      tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
+      habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
+      depth: '1–15 m', status: 'Least Concern',
+      fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
     },
-    () => { userLocation = 'Location unavailable'; }
-  );
-}
-
-// ══════════════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════════════
-document.getElementById('exploreBtn').addEventListener('click', () => {
-  document.getElementById('splash').classList.add('hidden');
-  document.getElementById('selectScreen').classList.add('show');
-});
-
-document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('viewerScreen').classList.remove('show');
-  document.getElementById('selectScreen').classList.add('show');
-  hideLabel();
-  // Stop AR if active
-  const mv = document.getElementById('mv');
-  if (mv.dismissPoster) mv.dismissPoster();
-});
-
-// ══════════════════════════════════════════════════
-//  OPEN CREATURE VIEWER
-// ══════════════════════════════════════════════════
-function openViewer(creature) {
-  currentCreature = creature;
-
-  // Update screen
-  document.getElementById('viewerTitle').textContent = creature.name;
-  document.getElementById('selectScreen').classList.remove('show');
-  document.getElementById('viewerScreen').classList.add('show');
-
-  // Load model
-  const mv = document.getElementById('mv');
-  mv.setAttribute('src', creature.modelSrc);
-  if (creature.iosSrc) {
-    mv.setAttribute('ios-src', creature.iosSrc);
-  }
-  mv.setAttribute('alt', creature.name);
-
-  // Update label content
-  document.getElementById('flEmoji').textContent = creature.emoji;
-  document.getElementById('flName').textContent  = creature.name;
-  document.getElementById('flSci').textContent   = creature.sciName;
-  document.getElementById('flFact').textContent  = creature.fact;
-  document.getElementById('flLoc').textContent   = userLocation;
-
-  hideLabel();
-  checkARSupport();
-}
-
-// ══════════════════════════════════════════════════
-//  AR SUPPORT CHECK
-// ══════════════════════════════════════════════════
-function checkARSupport() {
-  const mv = document.getElementById('mv');
-  // model-viewer exposes canActivateAR after load
-  mv.addEventListener('load', () => {
-    if (!mv.canActivateAR) {
-      document.getElementById('noArNote').style.display = 'block';
-      document.getElementById('arBtn').style.display = 'none';
-    } else {
-      document.getElementById('noArNote').style.display = 'none';
-      document.getElementById('arBtn').style.display = 'flex';
+    {
+      name: 'Swimming Shark', sci: 'Carcharhinus sp.', emoji: '🦈', color: '#607d8b',
+      model: 'models/swimming_shark.glb',
+      tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
+      habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
+      depth: '0–600 m', status: 'Vulnerable',
+      fact: 'Sharks detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away using special organs called the Ampullae of Lorenzini.'
+    },
+    {
+      name: 'Octopus', sci: 'Octopus vulgaris', emoji: '🐙', color: '#c2624a',
+      model: 'models/animal_crossing_new_horizons_octopus.glb',
+      tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
+      habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
+      depth: '0–200 m', status: 'Least Concern',
+      fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
+    },
+    {
+      name: 'Pufferfish', sci: 'Tetraodontidae', emoji: '🐡', color: '#e8c84a',
+      model: 'models/pufferfish.glb',
+      tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
+      habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
+      depth: '1–100 m', status: 'Varies by Species',
+      fact: 'Pufferfish contain tetrodotoxin — 1,200× more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by specially licensed chefs.'
+    },
+    {
+      name: 'Sea Turtle', sci: 'Cheloniidae', emoji: '🐢', color: '#4a8c5c',
+      model: 'models/happy_cute_sea_turtle.glb',
+      tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
+      habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
+      depth: '0–30 m', status: 'Endangered',
+      fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — returning to the exact same beach where they were born to lay their eggs.'
     }
-  }, { once: true });
-}
+  ];
 
-// ══════════════════════════════════════════════════
-//  TAP ON MODEL → SHOW FLOATING LABEL
-// ══════════════════════════════════════════════════
-const mv = document.getElementById('mv');
+  // ── Build Cards ──
+  const cards = document.getElementById('cards');
+  CREATURES.forEach(c => {
+    const el = document.createElement('article');
+    el.innerHTML = `
+      <div class="card-stripe" style="background:${c.color}"></div>
+      <div class="card-body">
+        <span class="card-emoji">${c.emoji}</span>
+        <div class="card-info">
+          <h3>${c.name}</h3>
+          <small>${c.sci}</small>
+          <div class="tags">${c.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+        <span>→</span>
+      </div>`;
+    el.addEventListener('click', () => openViewer(c));
+    cards.appendChild(el);
+  });
 
-mv.addEventListener('click', (e) => {
-  // Don't trigger if clicking AR button
-  if (e.target.closest('#arBtn') || e.target.closest('#floatLabel')) return;
-  triggerRipple(e.clientX, e.clientY);
-  if (labelVisible) {
-    hideLabel();
-  } else {
-    showLabel();
+  // ── Screen Navigation ──
+  const screens = document.querySelectorAll('.screen');
+  function show(id) {
+    screens.forEach(s => s.classList.toggle('active', s.id === id));
+    closeInfo();
   }
-});
 
-mv.addEventListener('ar-status', (e) => {
-  // When AR session starts, prepare label
-  if (e.detail.status === 'session-started') {
-    hideLabel();
+  // ── Viewer ──
+  const mv = document.getElementById('mv');
+  let infoOpen = false;
+
+  function openViewer(c) {
+    show('viewer');
+    mv.src = c.model;
+    mv.alt = c.name;
+
+    // Fill info card
+    document.getElementById('iName').textContent    = c.name;
+    document.getElementById('iSci').textContent     = c.sci;
+    document.getElementById('iEmoji').textContent   = c.emoji;
+    document.getElementById('iHabitat').textContent = c.habitat;
+    document.getElementById('iDiet').textContent    = c.diet;
+    document.getElementById('iDepth').textContent   = c.depth;
+    document.getElementById('iStatus').textContent  = c.status;
+    document.getElementById('iFact').textContent    = c.fact;
   }
-});
 
-// ══════════════════════════════════════════════════
-//  LABEL CONTROLS
-// ══════════════════════════════════════════════════
-function showLabel() {
-  document.getElementById('floatLabel').classList.add('visible');
-  labelVisible = true;
-}
+  // Auto-play animation when model loads
+  mv.addEventListener('load', () => {
+    const anim = mv.availableAnimations;
+    if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
+    document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
+  });
 
-function hideLabel() {
-  document.getElementById('floatLabel').classList.remove('visible');
-  labelVisible = false;
-}
+  // AR button
+  document.getElementById('arBtn').addEventListener('click', () => mv.activateAR());
 
-document.getElementById('flClose').addEventListener('click', (e) => {
-  e.stopPropagation();
-  hideLabel();
-});
+  // Tap model in 3D preview → toggle info
+  mv.addEventListener('click', e => {
+    if (e.target.closest('#arBtn')) return;
+    ripple(e.clientX, e.clientY);
+    infoOpen ? closeInfo() : openInfo();
+  });
 
-// ══════════════════════════════════════════════════
-//  TAP RIPPLE
-// ══════════════════════════════════════════════════
-function triggerRipple(x, y) {
-  const r = document.createElement('div');
-  r.className = 'ripple';
-  r.style.left = x + 'px';
-  r.style.top  = y + 'px';
-  document.body.appendChild(r);
-  setTimeout(() => r.remove(), 700);
-}
+  function openInfo()  {
+    document.getElementById('infoCard').classList.add('open');
+    infoOpen = true;
+  }
+
+  function closeInfo() {
+    document.getElementById('infoCard').classList.remove('open');
+    infoOpen = false;
+  }
+
+  // ── Ripple ──
+  function ripple(x, y) {
+    const r = document.createElement('div');
+    r.className = 'ripple';
+    r.style.cssText = `left:${x}px;top:${y}px`;
+    document.body.appendChild(r);
+    setTimeout(() => r.remove(), 650);
+  }
 </script>
 </body>
 </html>
