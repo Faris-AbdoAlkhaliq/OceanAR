@@ -448,7 +448,7 @@
     autoplay
     shadow-intensity="1" shadow-softness="0.5"
     environment-image="neutral" exposure="1" tone-mapping="commerce"
-    ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" xr-environment>
+    ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" ar-placement="floor" xr-environment>
     <button slot="ar-button" style="display:none"></button>
   </model-viewer>
 
@@ -476,6 +476,7 @@
         <dt>Diet</dt>     <dd id="iDiet"></dd>
         <dt>Depth</dt>    <dd id="iDepth"></dd>
         <dt>Status</dt>   <dd id="iStatus"></dd>
+        <dt>Real Size</dt><dd id="iSize"></dd>
       </dl>
       <div class="fact">
         <p>✦ Did You Know</p>
@@ -566,6 +567,11 @@
     mv.src = c.model;
     mv.alt = c.name;
 
+    // Set real-world AR scale
+    // model-viewer uses meters; we store target real size in arSize
+    mv.setAttribute('ar-scale', 'fixed');
+    mv.setAttribute('data-ar-size', c.arSize);
+
     // Fill info card
     document.getElementById('iName').textContent    = c.name;
     document.getElementById('iSci').textContent     = c.sci;
@@ -575,6 +581,7 @@
     document.getElementById('iDepth').textContent   = c.depth;
     document.getElementById('iStatus').textContent  = c.status;
     document.getElementById('iFact').textContent    = c.fact;
+    document.getElementById('iSize').textContent    = c.realSize || '—';
   }
 
   // Auto-play animation when model loads
@@ -582,6 +589,21 @@
     const anim = mv.availableAnimations;
     if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
     document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
+
+    // Scale model to real-world size in AR
+    // Get bounding box from model-viewer and compute scale factor
+    const targetSize = parseFloat(mv.getAttribute('data-ar-size') || '1');
+    try {
+      const { width, height, depth } = mv.getDimensions();
+      const modelMax = Math.max(width, height, depth);
+      if (modelMax > 0) {
+        const scaleFactor = targetSize / modelMax;
+        mv.scale = `${scaleFactor} ${scaleFactor} ${scaleFactor}`;
+      }
+    } catch(e) {
+      // getDimensions not available yet — use auto
+      mv.setAttribute('ar-scale', 'auto');
+    }
   });
 
   // AR button
