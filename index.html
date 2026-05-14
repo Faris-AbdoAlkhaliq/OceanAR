@@ -587,11 +587,11 @@
   });
 
   // AR button
-  document.getElementById('arBtn').addEventListener('click', () => { closeInfo(); mv.activateAR(); });
+  document.getElementById('arBtn').addEventListener('click', () => mv.activateAR());
 
   // Tap model in 3D preview → toggle info
   mv.addEventListener('click', e => {
-    if (e.target.closest('#arBtn') || e.target.closest('button')) return;
+    if (e.target.closest('#arBtn')) return;
     ripple(e.clientX, e.clientY);
     infoOpen ? closeInfo() : openInfo();
   });
