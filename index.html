@@ -488,10 +488,14 @@
 
 <script>
   // ── Data ──
+  // OBIS API — Ocean Biodiversity Information System
+  // Fetches real occurrence count + last sighting location for each species
+  const OBIS_API = 'https://api.obis.org/v3';
+
   const CREATURES = [
     {
       name: 'Clownfish', sci: 'Amphiprioninae', emoji: '🐠', color: '#ff6b35',
-      model: 'models/clownfish.glb',
+      model: 'models/clownfish.glb', sciQuery: 'Amphiprioninae',
       tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
       habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
       depth: '1–15 m', status: 'Least Concern',
@@ -499,7 +503,7 @@
     },
     {
       name: 'Swimming Shark', sci: 'Carcharhinus sp.', emoji: '🦈', color: '#607d8b',
-      model: 'models/shark.glb',
+      model: 'models/white_shark_from_depth.glb', sciQuery: 'Carcharhinus',
       tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
       habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
       depth: '0–600 m', status: 'Vulnerable',
@@ -507,7 +511,7 @@
     },
     {
       name: 'Octopus', sci: 'Octopus vulgaris', emoji: '🐙', color: '#c2624a',
-      model: 'models/animal_crossing_new_horizons_octopus.glb',
+      model: 'models/animal_crossing_new_horizons_octopus.glb', sciQuery: 'Octopus vulgaris',
       tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
       habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
       depth: '0–200 m', status: 'Least Concern',
@@ -515,7 +519,7 @@
     },
     {
       name: 'Pufferfish', sci: 'Tetraodontidae', emoji: '🐡', color: '#e8c84a',
-      model: 'models/pufferfish.glb',
+      model: 'models/pufferfish.glb', sciQuery: 'Tetraodontidae',
       tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
       habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
       depth: '1–100 m', status: 'Varies by Species',
@@ -523,7 +527,7 @@
     },
     {
       name: 'Sea Turtle', sci: 'Cheloniidae', emoji: '🐢', color: '#4a8c5c',
-      model: 'models/sea_turtle_low_poly.glb',
+      model: 'models/sea_turtle_low_poly.glb', sciQuery: 'Cheloniidae',
       tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
       habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
       depth: '0–30 m', status: 'Endangered',
@@ -575,6 +579,48 @@
     document.getElementById('iDepth').textContent   = c.depth;
     document.getElementById('iStatus').textContent  = c.status;
     document.getElementById('iFact').textContent    = c.fact;
+    fetchOBIS(c.sciQuery);
+  }
+
+  // Fetch live data from OBIS API
+  async function fetchOBIS(sciName) {
+    // Reset UI
+    document.getElementById('obisLoading').style.display = 'block';
+    document.getElementById('obisDl').style.display      = 'none';
+    document.getElementById('obisError').style.display   = 'none';
+
+    try {
+      // 1. Get total occurrence count
+      const statsRes = await fetch(`${OBIS_API}/occurrence?scientificname=${encodeURIComponent(sciName)}&size=0`);
+      const statsData = await statsRes.json();
+      const total = statsData.total ?? 0;
+
+      // 2. Get most recent occurrence
+      const recentRes = await fetch(`${OBIS_API}/occurrence?scientificname=${encodeURIComponent(sciName)}&size=1&fields=date_year,decimalLatitude,decimalLongitude,locality,waterBody`);
+      const recentData = await recentRes.json();
+      const rec = recentData.results?.[0];
+
+      // 3. Build location string
+      let location = '—';
+      if (rec) {
+        if (rec.locality)   location = rec.locality;
+        else if (rec.waterBody) location = rec.waterBody;
+        else if (rec.decimalLatitude && rec.decimalLongitude)
+          location = `${Math.abs(rec.decimalLatitude).toFixed(2)}°${rec.decimalLatitude >= 0 ? 'N' : 'S'}, ${Math.abs(rec.decimalLongitude).toFixed(2)}°${rec.decimalLongitude >= 0 ? 'E' : 'W'}`;
+      }
+
+      // 4. Update UI
+      document.getElementById('obisCount').textContent    = total.toLocaleString() + ' records';
+      document.getElementById('obisDate').textContent     = rec?.date_year ? `${rec.date_year}` : '—';
+      document.getElementById('obisLocation').textContent = location;
+
+      document.getElementById('obisLoading').style.display = 'none';
+      document.getElementById('obisDl').style.display      = 'grid';
+
+    } catch (err) {
+      document.getElementById('obisLoading').style.display = 'none';
+      document.getElementById('obisError').style.display   = 'block';
+    }
   }
 
   // Auto-play animation when model loads
