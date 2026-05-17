@@ -4,101 +4,97 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OceanAR</title>
-  
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-  
   <link rel="stylesheet" href="style.css" />
-  
   <script defer src="script.js"></script>
 </head>
 <body>
 
-  <section id="splash" class="screen active">
-    <p class="project-subtitle">CPIS360 — Immersive AR Experience</p>
-    <h1><em>Ocean</em>AR</h1>
-    <p>Real sea creatures in your world</p>
-    <div class="pills">
-      <span class="pill">🐠 Clownfish</span>
-      <span class="pill">🦈 Shark</span>
-      <span class="pill">🐙 Octopus</span>
-      <span class="pill">🐡 Pufferfish</span>
-      <span class="pill">🐢 Turtle</span>
-    </div>
-    <button class="btn-primary" onclick="show('select')">Explore the Ocean</button>
-    <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
-  </section>
+<section id="splash" class="screen active">
+  <p style="font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--teal);opacity:0.8">CPIS360 — Immersive AR Experience</p>
+  <h1><em>Ocean</em>AR</h1>
+  <p>Real sea creatures in your world</p>
+  <div class="pills">
+    <span class="pill">🐠 Clownfish</span>
+    <span class="pill">🦈 Shark</span>
+    <span class="pill">🐙 Octopus</span>
+    <span class="pill">🐡 Pufferfish</span>
+    <span class="pill">🐢 Turtle</span>
+  </div>
+  <button class="btn-primary" onclick="show('select')">Explore the Ocean</button>
+  <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
+</section>
 
-  <section id="select" class="screen">
-    <header>
-      <p>Choose your encounter</p>
-      <h2>Which creature will you <em>meet?</em></h2>
-    </header>
-    <div class="cards" id="cards"></div>
-  </section>
+<section id="select" class="screen">
+  <header>
+    <p>Choose your encounter</p>
+    <h2>Which creature will you <em>meet?</em></h2>
+  </header>
+  <div class="cards" id="cards"></div>
+</section>
 
-  <section id="viewer" class="screen">
-    <nav class="vhead">
-      <button id="backBtn" onclick="show('select')">← Back</button>
-      <span class="logo"><em>Ocean</em>AR</span>
-    </nav>
+<section id="viewer" class="screen">
+  <nav class="vhead">
+    <button id="backBtn" onclick="show('select')">← Back</button>
+    <span class="logo"><em>Ocean</em>AR</span>
+  </nav>
 
-    <model-viewer id="mv" src="" alt=""
-      camera-controls touch-action="pan-y"
-      auto-rotate auto-rotate-delay="800" rotation-per-second="15deg"
-      autoplay
-      shadow-intensity="1" shadow-softness="0.5"
-      environment-image="neutral" exposure="1" tone-mapping="commerce"
-      ar ar-modes="webxr scene-viewer quick-look" ar-scale="fixed" ar-placement="floor" xr-environment>
-      <button slot="ar-button" style="display:none"></button>
-    </model-viewer>
+  <model-viewer id="mv" src="" alt=""
+    scale="0.5 0.5 0.5"
+    camera-controls touch-action="pan-y"
+    auto-rotate auto-rotate-delay="800" rotation-per-second="15deg"
+    autoplay
+    shadow-intensity="1" shadow-softness="0.5"
+    environment-image="neutral" exposure="1" tone-mapping="commerce"
+    ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" ar-placement="floor" xr-environment>
+    <button slot="ar-button" style="display:none"></button>
+  </model-viewer>
 
-    <div class="vfoot">
-      <small>Drag to rotate · Pinch to zoom · Tap creature for info</small>
-      <button id="arBtn">📷 &nbsp; Place in Your World</button>
-    </div>
-  </section>
+  <div class="vfoot">
+    <small>Drag to rotate · Pinch to zoom · Tap creature for info</small>
+    <button id="arBtn">📷 &nbsp; Place in Your World</button>
+  </div>
+</section>
 
-  <aside id="infoCard">
-    <div class="info-wrap">
-      <div class="info-bar"></div>
-      <div class="info-body">
-        <div class="info-head">
-          <div>
-            <h2 id="iName"></h2>
-            <small id="iSci"></small>
-          </div>
-          <span class="info-emoji" id="iEmoji"></span>
+<aside id="infoCard">
+  <div class="info-wrap">
+    <div class="info-bar"></div>
+    <div class="info-body">
+      <div class="info-head">
+        <div>
+          <h2 id="iName"></h2>
+          <small id="iSci"></small>
         </div>
-        <hr>
-        
-        <dl class="info-grid">
-          <dt>Habitat</dt>  <dd id="iHabitat"></dd>
-          <dt>Diet</dt>     <dd id="iDiet"></dd>
-          <dt>Depth</dt>    <dd id="iDepth"></dd>
-          <dt>Status</dt>   <dd id="iStatus"></dd>
-        </dl>
-
-        <div class="live-tracking-box">
-          <p class="live-title">📊 Real-time OBIS Tracking</p>
-          <p id="obisLoading">Fetching global ocean records...</p>
-          <p id="obisError">Failed to sync with marine databases.</p>
-          
-          <dl class="info-grid" id="obisDl">
-            <dt>Global Records</dt>   <dd id="obisCount">—</dd>
-            <dt>Last Sighted</dt>    <dd id="obisDate">—</dd>
-            <dt class="full-width">Latest Location</dt>
-            <dd id="obisLocation" class="full-width highlight-text">—</dd>
-          </dl>
-        </div>
-
-        <div class="fact">
-          <p>✦ Did You Know</p>
-          <p id="iFact"></p>
-        </div>
-        <button id="closeBtn" onclick="closeInfo()">— Dismiss —</button>
+        <span class="info-emoji" id="iEmoji"></span>
       </div>
+      <hr>
+      <dl class="info-grid">
+        <dt>Habitat</dt>  <dd id="iHabitat"></dd>
+        <dt>Diet</dt>     <dd id="iDiet"></dd>
+        <dt>Depth</dt>    <dd id="iDepth"></dd>
+        <dt>Status</dt>   <dd id="iStatus"></dd>
+      </dl>
+
+      <div class="live-tracking-box">
+        <p class="live-title">📊 Real-time OBIS Tracking</p>
+        <p id="obisLoading" style="font-size:0.65rem; color:color-mix(in srgb, var(--foam) 50%, transparent); font-style:italic;">Fetching global ocean records...</p>
+        <p id="obisError" style="font-size:0.65rem; color:#ff6b6b; display:none;">Failed to sync with marine databases.</p>
+        <dl class="info-grid" id="obisDl" style="display:none; margin-bottom:0;">
+          <dt>Global Records</dt>   <dd id="obisCount">—</dd>
+          <dt>Last Sighted</dt>    <dd id="obisDate">—</dd>
+          <dt style="grid-column: span 2;">Latest Location</dt>
+          <dd id="obisLocation" style="grid-column: span 2; font-size:0.6rem; color:var(--glow);">—</dd>
+        </dl>
+      </div>
+
+      <div class="fact">
+        <p>✦ Did You Know</p>
+        <p id="iFact"></p>
+      </div>
+      <button id="closeBtn" onclick="closeInfo()">— Dismiss —</button>
     </div>
-  </aside>
+  </div>
+</aside>
 
 </body>
 </html>
