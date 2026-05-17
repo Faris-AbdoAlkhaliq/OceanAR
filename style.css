@@ -1,4 +1,4 @@
-/* ── Reset & CSS Custom Properties ── */
+/* ── Reset & Architecture Core Variables ── */
 *, *::before, *::after { 
   margin: 0; 
   padding: 0; 
@@ -22,7 +22,7 @@ html, body {
   font-family: var(--mono);
 }
 
-/* ── Shared Utilities ── */
+/* ── Screen Frame Layouts ── */
 .screen {
   position: fixed;
   inset: 0;
@@ -43,7 +43,7 @@ button {
   background: none;
 }
 
-/* ── Splash Screen ── */
+/* ── Splash Screen Styling ── */
 #splash {
   background: radial-gradient(ellipse at 50% 65%, #0a3a5a, var(--bg));
   text-align: center;
@@ -118,7 +118,7 @@ button {
   color: var(--bg);
 }
 
-/* ── Select Screen ── */
+/* ── Selection Screen Grid & Cards ── */
 #select {
   background: var(--bg);
   justify-content: flex-start;
@@ -223,7 +223,7 @@ article:active {
   padding: 0.15rem 0.45rem;
 }
 
-/* ── Viewer Screen ── */
+/* ── Interactive 3D Canvas Viewport ── */
 #viewer {
   background: var(--bg);
   justify-content: stretch;
@@ -313,7 +313,7 @@ model-viewer {
   box-shadow: 0 0 30px color-mix(in srgb, var(--glow) 35%, transparent);
 }
 
-/* ── Info Card ── */
+/* ── Floating Dashboard Card Panel ── */
 #infoCard {
   position: fixed;
   bottom: -100%;
@@ -356,7 +356,7 @@ model-viewer {
 
 .info-head h2 {
   font-family: var(--serif);
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 300;
   color: var(--foam);
   line-height: 1;
@@ -402,7 +402,7 @@ hr {
   line-height: 1.4; 
 }
 
-/* ── Live Tracking API Styles ── */
+/* ── Live OBIS System Tracker Element Formatting ── */
 .live-tracking-box {
   border-top: 1px dashed color-mix(in srgb, var(--teal) 20%, transparent); 
   margin: 0.8rem 0; 
@@ -417,33 +417,11 @@ hr {
   margin-bottom: 0.4rem;
 }
 
-#obisLoading {
-  font-size: 0.65rem; 
-  color: color-mix(in srgb, var(--foam) 50%, transparent); 
-  font-style: italic;
-}
-
-#obisError {
-  font-size: 0.65rem; 
-  color: #ff6b6b; 
-  display: none;
-}
-
-#obisDl {
-  display: none; 
-  margin-bottom: 0;
-}
-
 .full-width {
   grid-column: span 2;
 }
 
-.highlight-text {
-  font-size: 0.6rem; 
-  color: var(--glow);
-}
-
-/* ── Facts Overlay ── */
+/* ── Curated Educational Section styling ── */
 .fact {
   background: color-mix(in srgb, var(--glow) 4%, transparent);
   border-left: 2px solid var(--glow);
@@ -483,7 +461,7 @@ hr {
   border-color: var(--teal); 
 }
 
-/* ── Tap Ripple ── */
+/* ── Haptic Click Ripple Effect ── */
 .ripple {
   position: fixed;
   width: 60px; height: 60px;
