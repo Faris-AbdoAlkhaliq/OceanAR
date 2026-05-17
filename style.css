@@ -1,0 +1,501 @@
+/* ── Reset & CSS Custom Properties ── */
+*, *::before, *::after { 
+  margin: 0; 
+  padding: 0; 
+  box-sizing: border-box; 
+}
+
+:root {
+  --bg:   #020c18;
+  --teal: #1ab3c8;
+  --foam: #a8f0f5;
+  --glow: #00ffe7;
+  --serif: 'Georgia', serif;
+  --mono:  'Courier New', monospace;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--foam);
+  font-family: var(--mono);
+}
+
+/* ── Shared Utilities ── */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.screen.active { 
+  display: flex; 
+}
+
+button {
+  font-family: var(--mono);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+/* ── Splash Screen ── */
+#splash {
+  background: radial-gradient(ellipse at 50% 65%, #0a3a5a, var(--bg));
+  text-align: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.project-subtitle {
+  font-size: 0.6rem;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--teal);
+  opacity: 0.8;
+}
+
+#splash h1 {
+  font-family: var(--serif);
+  font-size: clamp(3rem, 12vw, 6rem);
+  font-weight: 300;
+  color: var(--foam);
+  line-height: 1;
+}
+
+#splash h1 em {
+  font-style: italic;
+  color: var(--glow);
+}
+
+#splash p {
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--foam) 50%, transparent);
+  line-height: 2;
+}
+
+#splash p b { 
+  color: var(--teal); 
+  font-weight: 400; 
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.pill {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal);
+  border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+  padding: 0.3rem 0.7rem;
+  background: color-mix(in srgb, var(--teal) 5%, transparent);
+}
+
+.btn-primary {
+  width: 100%;
+  max-width: 320px;
+  padding: 0.9rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--glow);
+  border: 1.5px solid var(--glow);
+  background: none;
+  transition: background 0.3s, color 0.3s;
+}
+
+.btn-primary:hover {
+  background: var(--glow);
+  color: var(--bg);
+}
+
+/* ── Select Screen ── */
+#select {
+  background: var(--bg);
+  justify-content: flex-start;
+  padding: 2rem 1.5rem;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+#select header { 
+  width: 100%; 
+}
+
+#select header p {
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--teal);
+  opacity: 0.7;
+}
+
+#select header h2 {
+  font-family: var(--serif);
+  font-size: 1.9rem;
+  font-weight: 300;
+  color: var(--foam);
+}
+
+#select header h2 em { 
+  color: var(--glow); 
+}
+
+.cards { 
+  width: 100%; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 0.8rem; 
+}
+
+article {
+  width: 100%;
+  border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+  background: color-mix(in srgb, #0a2540 80%, transparent);
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.15s;
+  overflow: hidden;
+}
+
+article:active {
+  border-color: var(--glow);
+  transform: scale(0.99);
+}
+
+.card-stripe { 
+  height: 2px; 
+}
+
+.card-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.card-emoji { 
+  font-size: 2.8rem; 
+  flex-shrink: 0; 
+}
+
+.card-info { 
+  flex: 1; 
+}
+
+.card-info h3 {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--foam);
+  line-height: 1;
+}
+
+.card-info small {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.7rem;
+  color: color-mix(in srgb, var(--foam) 40%, transparent);
+  display: block;
+  margin: 0.15rem 0 0.4rem;
+}
+
+.tags { 
+  display: flex; 
+  gap: 0.35rem; 
+  flex-wrap: wrap; 
+}
+
+.tag {
+  font-size: 0.42rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--teal);
+  border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+  padding: 0.15rem 0.45rem;
+}
+
+/* ── Viewer Screen ── */
+#viewer {
+  background: var(--bg);
+  justify-content: stretch;
+  padding: 0;
+}
+
+model-viewer {
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  --progress-bar-color: var(--glow);
+  background: radial-gradient(ellipse at 50% 55%, #071e36, var(--bg));
+}
+
+.vhead {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 20;
+  padding: 1rem 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 90%, transparent), transparent);
+  pointer-events: none;
+}
+
+.vhead .logo {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: var(--foam);
+}
+
+.vhead .logo em { 
+  color: var(--glow); 
+}
+
+#backBtn {
+  pointer-events: all;
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foam) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foam) 20%, transparent);
+  padding: 0.45rem 0.8rem;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+#backBtn:hover { 
+  color: var(--teal); 
+  border-color: var(--teal); 
+}
+
+.vfoot {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  z-index: 20;
+  padding: 0.8rem 1.2rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent) 60%, transparent);
+}
+
+.vfoot small {
+  font-size: 0.48rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foam) 30%, transparent);
+  animation: pulse 3s ease infinite;
+}
+
+@keyframes pulse { 
+  0%, 100% { opacity: 0.3; } 50% { opacity: 1; } 
+}
+
+#arBtn {
+  width: min(320px, 90vw);
+  padding: 0.85rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--glow);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--glow) 35%, transparent);
+}
+
+/* ── Info Card ── */
+#infoCard {
+  position: fixed;
+  bottom: -100%;
+  left: 50%;
+  translate: -50% 0;
+  width: min(420px, 93vw);
+  z-index: 600;
+  pointer-events: none;
+  transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#infoCard.open {
+  bottom: 1.5rem;
+  pointer-events: all;
+}
+
+.info-wrap {
+  background: color-mix(in srgb, #0a2540 97%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 20px 60px color-mix(in srgb, black 70%, transparent);
+  overflow: hidden;
+}
+
+.info-bar { 
+  height: 3px; 
+  background: linear-gradient(90deg, var(--glow), var(--teal), transparent); 
+}
+
+.info-body { 
+  padding: 1.4rem; 
+}
+
+.info-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.9rem;
+}
+
+.info-head h2 {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--foam);
+  line-height: 1;
+}
+
+.info-head small {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.75rem;
+  color: color-mix(in srgb, var(--foam) 38%, transparent);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.info-emoji { 
+  font-size: 2.5rem; 
+}
+
+hr { 
+  border: none; 
+  border-top: 1px solid color-mix(in srgb, var(--teal) 30%, transparent); 
+  margin-bottom: 0.9rem; 
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.info-grid dt {
+  font-size: 0.44rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--teal);
+  margin-bottom: 0.12rem;
+}
+
+.info-grid dd { 
+  font-size: 0.68rem; 
+  color: var(--foam); 
+  line-height: 1.4; 
+}
+
+/* ── Live Tracking API Styles ── */
+.live-tracking-box {
+  border-top: 1px dashed color-mix(in srgb, var(--teal) 20%, transparent); 
+  margin: 0.8rem 0; 
+  padding-top: 0.8rem;
+}
+
+.live-title {
+  font-size: 0.44rem; 
+  letter-spacing: 0.2em; 
+  text-transform: uppercase; 
+  color: var(--teal); 
+  margin-bottom: 0.4rem;
+}
+
+#obisLoading {
+  font-size: 0.65rem; 
+  color: color-mix(in srgb, var(--foam) 50%, transparent); 
+  font-style: italic;
+}
+
+#obisError {
+  font-size: 0.65rem; 
+  color: #ff6b6b; 
+  display: none;
+}
+
+#obisDl {
+  display: none; 
+  margin-bottom: 0;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+.highlight-text {
+  font-size: 0.6rem; 
+  color: var(--glow);
+}
+
+/* ── Facts Overlay ── */
+.fact {
+  background: color-mix(in srgb, var(--glow) 4%, transparent);
+  border-left: 2px solid var(--glow);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.fact p:first-child {
+  font-size: 0.44rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--glow);
+  margin-bottom: 0.25rem;
+}
+
+.fact p:last-child {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: color-mix(in srgb, var(--foam) 80%, transparent);
+  line-height: 1.55;
+}
+
+#closeBtn {
+  width: 100%;
+  padding: 0.65rem;
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--foam) 40%, transparent);
+  border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+#closeBtn:hover { 
+  color: var(--teal); 
+  border-color: var(--teal); 
+}
+
+/* ── Tap Ripple ── */
+.ripple {
+  position: fixed;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--glow);
+  pointer-events: none;
+  z-index: 700;
+  translate: -50% -50%;
+  animation: ripple 0.6s ease forwards;
+}
+
+@keyframes ripple {
+  from { scale: 0; opacity: 1; }
+  to   { scale: 2.5; opacity: 0; }
+}

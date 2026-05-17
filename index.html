@@ -4,687 +4,101 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>OceanAR</title>
+  
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-  <style>
-    /* ── Reset & Variables ── */
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-
-    :root {
-      --bg:   #020c18;
-      --teal: #1ab3c8;
-      --foam: #a8f0f5;
-      --glow: #00ffe7;
-      --serif: 'Georgia', serif;
-      --mono:  'Courier New', monospace;
-    }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      background: var(--bg);
-      color: var(--foam);
-      font-family: var(--mono);
-    }
-
-    /* ── Shared Utilities ── */
-    .screen {
-      position: fixed;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-    .screen.active { display: flex; }
-
-    button {
-      font-family: var(--mono);
-      cursor: pointer;
-      border: none;
-      background: none;
-    }
-
-    /* ── Splash Screen ── */
-    #splash {
-      background: radial-gradient(ellipse at 50% 65%, #0a3a5a, var(--bg));
-      text-align: center;
-      padding: 2rem;
-      gap: 1rem;
-    }
-
-    #splash h1 {
-      font-family: var(--serif);
-      font-size: clamp(3rem, 12vw, 6rem);
-      font-weight: 300;
-      color: var(--foam);
-      line-height: 1;
-    }
-
-    #splash h1 em {
-      font-style: italic;
-      color: var(--glow);
-    }
-
-    #splash p {
-      font-size: 0.75rem;
-      color: color-mix(in srgb, var(--foam) 50%, transparent);
-      line-height: 2;
-    }
-
-    #splash p b { color: var(--teal); font-weight: 400; }
-
-    .pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: center;
-    }
-
-    .pill {
-      font-size: 0.6rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--teal);
-      border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
-      padding: 0.3rem 0.7rem;
-      background: color-mix(in srgb, var(--teal) 5%, transparent);
-    }
-
-    .btn-primary {
-      width: 100%;
-      max-width: 320px;
-      padding: 0.9rem;
-      font-size: 0.7rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--glow);
-      border: 1.5px solid var(--glow);
-      background: none;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    .btn-primary:hover {
-      background: var(--glow);
-      color: var(--bg);
-    }
-
-    /* ── Select Screen ── */
-    #select {
-      background: var(--bg);
-      justify-content: flex-start;
-      padding: 2rem 1.5rem;
-      gap: 1rem;
-      overflow-y: auto;
-    }
-
-    #select header { width: 100%; }
-
-    #select header p {
-      font-size: 0.55rem;
-      letter-spacing: 0.3em;
-      text-transform: uppercase;
-      color: var(--teal);
-      opacity: 0.7;
-    }
-
-    #select header h2 {
-      font-family: var(--serif);
-      font-size: 1.9rem;
-      font-weight: 300;
-      color: var(--foam);
-    }
-
-    #select header h2 em { color: var(--glow); }
-
-    /* Creature cards */
-    .cards { width: 100%; display: flex; flex-direction: column; gap: 0.8rem; }
-
-    article {
-      width: 100%;
-      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
-      background: color-mix(in srgb, #0a2540 80%, transparent);
-      cursor: pointer;
-      transition: border-color 0.2s, transform 0.15s;
-      overflow: hidden;
-    }
-
-    article:active {
-      border-color: var(--glow);
-      transform: scale(0.99);
-    }
-
-    .card-stripe { height: 2px; }
-
-    .card-body {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem;
-    }
-
-    .card-emoji { font-size: 2.8rem; flex-shrink: 0; }
-
-    .card-info { flex: 1; }
-
-    .card-info h3 {
-      font-family: var(--serif);
-      font-size: 1.4rem;
-      font-weight: 300;
-      color: var(--foam);
-      line-height: 1;
-    }
-
-    .card-info small {
-      font-family: var(--serif);
-      font-style: italic;
-      font-size: 0.7rem;
-      color: color-mix(in srgb, var(--foam) 40%, transparent);
-      display: block;
-      margin: 0.15rem 0 0.4rem;
-    }
-
-    .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-
-    .tag {
-      font-size: 0.42rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--teal);
-      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
-      padding: 0.15rem 0.45rem;
-    }
-
-    /* ── Viewer Screen ── */
-    #viewer {
-      background: var(--bg);
-      justify-content: stretch;
-      padding: 0;
-    }
-
-    model-viewer {
-      width: 100%;
-      height: 100%;
-      flex: 1;
-      --progress-bar-color: var(--glow);
-      background: radial-gradient(ellipse at 50% 55%, #071e36, var(--bg));
-    }
-
-    /* Viewer header */
-    .vhead {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      z-index: 20;
-      padding: 1rem 1.2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 90%, transparent), transparent);
-      pointer-events: none;
-    }
-
-    .vhead .logo {
-      font-family: var(--serif);
-      font-size: 1.1rem;
-      font-weight: 300;
-      color: var(--foam);
-    }
-
-    .vhead .logo em { color: var(--glow); }
-
-    #backBtn {
-      pointer-events: all;
-      font-size: 0.52rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, var(--foam) 50%, transparent);
-      border: 1px solid color-mix(in srgb, var(--foam) 20%, transparent);
-      padding: 0.45rem 0.8rem;
-      transition: color 0.2s, border-color 0.2s;
-    }
-
-    #backBtn:hover { color: var(--teal); border-color: var(--teal); }
-
-    /* Viewer footer */
-    .vfoot {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      z-index: 20;
-      padding: 0.8rem 1.2rem 2rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.6rem;
-      background: linear-gradient(to top, color-mix(in srgb, var(--bg) 92%, transparent) 60%, transparent);
-    }
-
-    .vfoot small {
-      font-size: 0.48rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, var(--foam) 30%, transparent);
-      animation: pulse 3s ease infinite;
-    }
-
-    @keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-
-    #arBtn {
-      width: min(320px, 90vw);
-      padding: 0.85rem;
-      font-size: 0.65rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      font-weight: 700;
-      color: var(--bg);
-      background: var(--glow);
-      box-shadow: 0 0 30px color-mix(in srgb, var(--glow) 35%, transparent);
-    }
-
-    /* ── Info Card ── */
-    #infoCard {
-      position: fixed;
-      bottom: -100%;
-      left: 50%;
-      translate: -50% 0;
-      width: min(420px, 93vw);
-      z-index: 600;
-      pointer-events: none;
-      transition: bottom 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    #infoCard.open {
-      bottom: 1.5rem;
-      pointer-events: all;
-    }
-
-    .info-wrap {
-      background: color-mix(in srgb, #0a2540 97%, transparent);
-      border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
-      backdrop-filter: blur(20px);
-      box-shadow: 0 20px 60px color-mix(in srgb, black 70%, transparent);
-      overflow: hidden;
-    }
-
-    .info-bar { height: 3px; background: linear-gradient(90deg, var(--glow), var(--teal), transparent); }
-
-    .info-body { padding: 1.4rem; }
-
-    .info-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 0.9rem;
-    }
-
-    .info-head h2 {
-      font-family: var(--serif);
-      font-size: 1.6rem;
-      font-weight: 300;
-      color: var(--foam);
-      line-height: 1;
-    }
-
-    .info-head small {
-      font-family: var(--serif);
-      font-style: italic;
-      font-size: 0.75rem;
-      color: color-mix(in srgb, var(--foam) 38%, transparent);
-      display: block;
-      margin-top: 0.2rem;
-    }
-
-    .info-emoji { font-size: 2.5rem; }
-
-    hr { border: none; border-top: 1px solid color-mix(in srgb, var(--teal) 30%, transparent); margin-bottom: 0.9rem; }
-
-    .info-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.7rem;
-      margin-bottom: 0.9rem;
-    }
-
-    .info-grid dt {
-      font-size: 0.44rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--teal);
-      margin-bottom: 0.12rem;
-    }
-
-    .info-grid dd { font-size: 0.68rem; color: var(--foam); line-height: 1.4; }
-
-    .fact {
-      background: color-mix(in srgb, var(--glow) 4%, transparent);
-      border-left: 2px solid var(--glow);
-      padding: 0.7rem 0.9rem;
-      margin-bottom: 1rem;
-    }
-
-    .fact p:first-child {
-      font-size: 0.44rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--glow);
-      margin-bottom: 0.25rem;
-    }
-
-    .fact p:last-child {
-      font-family: var(--serif);
-      font-style: italic;
-      font-size: 0.88rem;
-      color: color-mix(in srgb, var(--foam) 80%, transparent);
-      line-height: 1.55;
-    }
-
-    #closeBtn {
-      width: 100%;
-      padding: 0.65rem;
-      font-size: 0.5rem;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: color-mix(in srgb, var(--foam) 40%, transparent);
-      border: 1px solid color-mix(in srgb, var(--teal) 20%, transparent);
-      transition: color 0.2s, border-color 0.2s;
-    }
-
-    #closeBtn:hover { color: var(--teal); border-color: var(--teal); }
-
-    /* ── Tap Ripple ── */
-    .ripple {
-      position: fixed;
-      width: 60px; height: 60px;
-      border-radius: 50%;
-      border: 2px solid var(--glow);
-      pointer-events: none;
-      z-index: 700;
-      translate: -50% -50%;
-      animation: ripple 0.6s ease forwards;
-    }
-
-    @keyframes ripple {
-      from { scale: 0; opacity: 1; }
-      to   { scale: 2.5; opacity: 0; }
-    }
-  </style>
+  
+  <link rel="stylesheet" href="style.css" />
+  
+  <script defer src="script.js"></script>
 </head>
 <body>
 
-<section id="splash" class="screen active">
-  <p style="font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--teal);opacity:0.8">CPIS360 — Immersive AR Experience</p>
-  <h1><em>Ocean</em>AR</h1>
-  <p>Real sea creatures in your world</p>
-  <div class="pills">
-    <span class="pill">🐠 Clownfish</span>
-    <span class="pill">🦈 Shark</span>
-    <span class="pill">🐙 Octopus</span>
-    <span class="pill">🐡 Pufferfish</span>
-    <span class="pill">🐢 Turtle</span>
-  </div>
-  <button class="btn-primary" onclick="show('select')">Explore the Ocean</button>
-  <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
-</section>
-
-<section id="select" class="screen">
-  <header>
-    <p>Choose your encounter</p>
-    <h2>Which creature will you <em>meet?</em></h2>
-  </header>
-  <div class="cards" id="cards"></div>
-</section>
-
-<section id="viewer" class="screen">
-  <nav class="vhead">
-    <button id="backBtn" onclick="show('select')">← Back</button>
-    <span class="logo"><em>Ocean</em>AR</span>
-  </nav>
-
-  <model-viewer id="mv" src="" alt=""
-    camera-controls touch-action="pan-y"
-    auto-rotate auto-rotate-delay="800" rotation-per-second="15deg"
-    autoplay
-    shadow-intensity="1" shadow-softness="0.5"
-    environment-image="neutral" exposure="1" tone-mapping="commerce"
-    ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" ar-placement="floor" xr-environment>
-    <button slot="ar-button" style="display:none"></button>
-  </model-viewer>
-
-  <div class="vfoot">
-    <small>Drag to rotate · Pinch to zoom · Tap creature for info</small>
-    <button id="arBtn">📷 &nbsp; Place in Your World</button>
-  </div>
-</section>
-
-<aside id="infoCard">
-  <div class="info-wrap">
-    <div class="info-bar"></div>
-    <div class="info-body">
-      <div class="info-head">
-        <div>
-          <h2 id="iName"></h2>
-          <small id="iSci"></small>
-        </div>
-        <span class="info-emoji" id="iEmoji"></span>
-      </div>
-      <hr>
-      
-      <dl class="info-grid">
-        <dt>Habitat</dt>  <dd id="iHabitat"></dd>
-        <dt>Diet</dt>     <dd id="iDiet"></dd>
-        <dt>Depth</dt>    <dd id="iDepth"></dd>
-        <dt>Status</dt>   <dd id="iStatus"></dd>
-      </dl>
-
-      <div style="border-top: 1px dashed color-mix(in srgb, var(--teal) 20%, transparent); margin: 0.8rem 0; padding-top: 0.8rem;">
-        <p style="font-size: 0.44rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.4rem;">📊 Real-time OBIS Tracking</p>
-        
-        <p id="obisLoading" style="font-size: 0.65rem; color: color-mix(in srgb, var(--foam) 50%, transparent); font-style: italic;">Fetching global ocean records...</p>
-        
-        <p id="obisError" style="font-size: 0.65rem; color: #ff6b6b; display: none;">Failed to sync with marine databases.</p>
-        
-        <dl class="info-grid" id="obisDl" style="display: none; margin-bottom: 0;">
-          <dt>Global Records</dt>   <dd id="obisCount">—</dd>
-          <dt>Last Sighted</dt>    <dd id="obisDate">—</dd>
-          <dt style="grid-column: span 2">Latest Location</dt>
-          <dd id="obisLocation" style="grid-column: span 2; font-size: 0.6rem; color: var(--glow);">—</dd>
-        </dl>
-      </div>
-
-      <div class="fact">
-        <p>✦ Did You Know</p>
-        <p id="iFact"></p>
-      </div>
-      <button id="closeBtn" onclick="closeInfo()">— Dismiss —</button>
+  <section id="splash" class="screen active">
+    <p class="project-subtitle">CPIS360 — Immersive AR Experience</p>
+    <h1><em>Ocean</em>AR</h1>
+    <p>Real sea creatures in your world</p>
+    <div class="pills">
+      <span class="pill">🐠 Clownfish</span>
+      <span class="pill">🦈 Shark</span>
+      <span class="pill">🐙 Octopus</span>
+      <span class="pill">🐡 Pufferfish</span>
+      <span class="pill">🐢 Turtle</span>
     </div>
-  </div>
-</aside>
+    <button class="btn-primary" onclick="show('select')">Explore the Ocean</button>
+    <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
+  </section>
 
-<script>
-  // ── Data ──
-  const OBIS_API = 'https://api.obis.org/v3';
+  <section id="select" class="screen">
+    <header>
+      <p>Choose your encounter</p>
+      <h2>Which creature will you <em>meet?</em></h2>
+    </header>
+    <div class="cards" id="cards"></div>
+  </section>
 
-  const CREATURES = [
-    {
-      name: 'Clownfish', sci: 'Amphiprioninae', emoji: '🐠', color: '#ff6b35',
-      model: 'models/clownfish.glb', sciQuery: 'Amphiprioninae',
-      tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
-      habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
-      depth: '1–15 m', status: 'Least Concern',
-      baseScale: '1 1 1', // standard default scale
-      fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
-    },
-    {
-      name: 'Swimming Shark', sci: 'Carcharhinus sp.', emoji: '🦈', color: '#607d8b',
-      model: 'models/white_shark_from_depth.glb', sciQuery: 'Carcharhinus',
-      tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
-      habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
-      depth: '0–600 m', status: 'Vulnerable',
-      baseScale: '0.01 0.01 0.01', // Dynamically normalizes massive 3D models to 1% baseline size
-      fact: 'Sharks detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away using special organs called the Ampullae of Lorenzini.'
-    },
-    {
-      name: 'Octopus', sci: 'Octopus vulgaris', emoji: '🐙', color: '#c2624a',
-      model: 'models/animal_crossing_new_horizons_octopus.glb', sciQuery: 'Octopus vulgaris',
-      tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
-      habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
-      depth: '0–200 m', status: 'Least Concern',
-      baseScale: '1 1 1',
-      fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — an ability unique in the animal kingdom.'
-    },
-    {
-      name: 'Pufferfish', sci: 'Tetraodontidae', emoji: '🐡', color: '#e8c84a',
-      model: 'models/pufferfish.glb', sciQuery: 'Tetraodontidae',
-      tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
-      habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
-      depth: '1–100 m', status: 'Varies by Species',
-      baseScale: '1 1 1',
-      fact: 'Pufferfish contain tetrodotoxin — 1,200× more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by specially licensed chefs.'
-    },
-    {
-      name: 'Sea Turtle', sci: 'Cheloniidae', emoji: '🐢', color: '#4a8c5c',
-      model: 'models/sea_turtle_low_poly.glb', sciQuery: 'Cheloniidae',
-      tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
-      habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
-      depth: '0–30 m', status: 'Endangered',
-      baseScale: '1 1 1',
-      fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — returning to the exact same beach where they were born to lay their eggs.'
-    }
-  ];
+  <section id="viewer" class="screen">
+    <nav class="vhead">
+      <button id="backBtn" onclick="show('select')">← Back</button>
+      <span class="logo"><em>Ocean</em>AR</span>
+    </nav>
 
-  // ── Build Cards ──
-  const cards = document.getElementById('cards');
-  CREATURES.forEach(c => {
-    const el = document.createElement('article');
-    el.innerHTML = `
-      <div class="card-stripe" style="background:${c.color}"></div>
-      <div class="card-body">
-        <span class="card-emoji">${c.emoji}</span>
-        <div class="card-info">
-          <h3>${c.name}</h3>
-          <small>${c.sci}</small>
-          <div class="tags">${c.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    <model-viewer id="mv" src="" alt=""
+      camera-controls touch-action="pan-y"
+      auto-rotate auto-rotate-delay="800" rotation-per-second="15deg"
+      autoplay
+      shadow-intensity="1" shadow-softness="0.5"
+      environment-image="neutral" exposure="1" tone-mapping="commerce"
+      ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" ar-placement="floor" xr-environment>
+      <button slot="ar-button" style="display:none"></button>
+    </model-viewer>
+
+    <div class="vfoot">
+      <small>Drag to rotate · Pinch to zoom · Tap creature for info</small>
+      <button id="arBtn">📷 &nbsp; Place in Your World</button>
+    </div>
+  </section>
+
+  <aside id="infoCard">
+    <div class="info-wrap">
+      <div class="info-bar"></div>
+      <div class="info-body">
+        <div class="info-head">
+          <div>
+            <h2 id="iName"></h2>
+            <small id="iSci"></small>
+          </div>
+          <span class="info-emoji" id="iEmoji"></span>
         </div>
-        <span>→</span>
-      </div>`;
-    el.addEventListener('click', () => openViewer(c));
-    cards.appendChild(el);
-  });
+        <hr>
+        
+        <dl class="info-grid">
+          <dt>Habitat</dt>  <dd id="iHabitat"></dd>
+          <dt>Diet</dt>     <dd id="iDiet"></dd>
+          <dt>Depth</dt>    <dd id="iDepth"></dd>
+          <dt>Status</dt>   <dd id="iStatus"></dd>
+        </dl>
 
-  // ── Screen Navigation ──
-  const screens = document.querySelectorAll('.screen');
-  function show(id) {
-    screens.forEach(s => s.classList.toggle('active', s.id === id));
-    closeInfo();
-  }
+        <div class="live-tracking-box">
+          <p class="live-title">📊 Real-time OBIS Tracking</p>
+          <p id="obisLoading">Fetching global ocean records...</p>
+          <p id="obisError">Failed to sync with marine databases.</p>
+          
+          <dl class="info-grid" id="obisDl">
+            <dt>Global Records</dt>   <dd id="obisCount">—</dd>
+            <dt>Last Sighted</dt>    <dd id="obisDate">—</dd>
+            <dt class="full-width">Latest Location</dt>
+            <dd id="obisLocation" class="full-width highlight-text">—</dd>
+          </dl>
+        </div>
 
-  // ── Viewer ──
-  const mv = document.getElementById('mv');
-  let infoOpen = false;
+        <div class="fact">
+          <p>✦ Did You Know</p>
+          <p id="iFact"></p>
+        </div>
+        <button id="closeBtn" onclick="closeInfo()">— Dismiss —</button>
+      </div>
+    </div>
+  </aside>
 
-  function openViewer(c) {
-    show('viewer');
-    mv.src = c.model;
-    mv.alt = c.name;
-
-    // 1. Set initial layout scale baseline
-    if (c.baseScale) {
-      mv.setAttribute('scale', c.baseScale);
-    } else {
-      mv.removeAttribute('scale');
-    }
-
-    // 2. Set AR view to auto layout, enabling user pinch gestures
-    mv.setAttribute('ar-scale', 'auto');
-
-    // Fill static info card
-    document.getElementById('iName').textContent    = c.name;
-    document.getElementById('iSci').textContent     = c.sci;
-    document.getElementById('iEmoji').textContent   = c.emoji;
-    document.getElementById('iHabitat').textContent = c.habitat;
-    document.getElementById('iDiet').textContent    = c.diet;
-    document.getElementById('iDepth').textContent   = c.depth;
-    document.getElementById('iStatus').textContent  = c.status;
-    document.getElementById('iFact').textContent    = c.fact;
-    
-    // Fire API fetch
-    fetchOBIS(c.sciQuery);
-  }
-
-  // Fetch live data from OBIS API
-  async function fetchOBIS(sciName) {
-    document.getElementById('obisLoading').style.display = 'block';
-    document.getElementById('obisDl').style.display      = 'none';
-    document.getElementById('obisError').style.display   = 'none';
-
-    try {
-      // 1. Get total occurrence count
-      const statsRes = await fetch(`${OBIS_API}/occurrence?scientificname=${encodeURIComponent(sciName)}&size=0`);
-      const statsData = await statsRes.json();
-      const total = statsData.total ?? 0;
-
-      // 2. Get most recent occurrence
-      const recentRes = await fetch(`${OBIS_API}/occurrence?scientificname=${encodeURIComponent(sciName)}&size=1&fields=date_year,decimalLatitude,decimalLongitude,locality,waterBody`);
-      const recentData = await recentRes.json();
-      const rec = recentData.results?.[0];
-
-      // 3. Build location string
-      let location = '—';
-      if (rec) {
-        if (rec.locality)   location = rec.locality;
-        else if (rec.waterBody) location = rec.waterBody;
-        else if (rec.decimalLatitude && rec.decimalLongitude)
-          location = `${Math.abs(rec.decimalLatitude).toFixed(2)}°${rec.decimalLatitude >= 0 ? 'N' : 'S'}, ${Math.abs(rec.decimalLongitude).toFixed(2)}°${rec.decimalLongitude >= 0 ? 'E' : 'W'}`;
-      }
-
-      // 4. Update UI elements safely
-      document.getElementById('obisCount').textContent    = total.toLocaleString() + ' records';
-      document.getElementById('obisDate').textContent     = rec?.date_year ? `${rec.date_year}` : '—';
-      document.getElementById('obisLocation').textContent = location;
-
-      document.getElementById('obisLoading').style.display = 'none';
-      document.getElementById('obisDl').style.display      = 'grid';
-
-    } catch (err) {
-      document.getElementById('obisLoading').style.display = 'none';
-      document.getElementById('obisError').style.display   = 'block';
-    }
-  }
-
-  // Setup viewer actions when model loads
-  mv.addEventListener('load', () => {
-    const anim = mv.availableAnimations;
-    if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
-    document.getElementById('arBtn').style.display = 'block';
-  });
-
-  // AR button trigger
-  document.getElementById('arBtn').addEventListener('click', () => mv.activateAR());
-
-  // Tap model space to bring up card details
-  mv.addEventListener('click', e => {
-    if (e.target.closest('#arBtn') || e.target.closest('#backBtn')) return;
-    ripple(e.clientX, e.clientY);
-    infoOpen ? closeInfo() : openInfo();
-  });
-
-  function openInfo()  {
-    document.getElementById('infoCard').classList.add('open');
-    infoOpen = true;
-  }
-
-  function closeInfo() {
-    document.getElementById('infoCard').classList.remove('open');
-    infoOpen = false;
-  }
-
-  // ── Ripple Effect ──
-  function ripple(x, y) {
-    const r = document.createElement('div');
-    r.className = 'ripple';
-    r.style.cssText = `left:${x}px;top:${y}px`;
-    document.body.appendChild(r);
-    setTimeout(() => r.remove(), 650);
-  }
-</script>
 </body>
 </html>
