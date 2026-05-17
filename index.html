@@ -318,7 +318,7 @@
 
     .info-head h2 {
       font-family: var(--serif);
-      font-size: 2rem;
+      font-size: 1.6rem;
       font-weight: 300;
       color: var(--foam);
       line-height: 1;
@@ -410,7 +410,6 @@
 </head>
 <body>
 
-<!-- Splash -->
 <section id="splash" class="screen active">
   <p style="font-size:0.6rem;letter-spacing:0.35em;text-transform:uppercase;color:var(--teal);opacity:0.8">CPIS360 — Immersive AR Experience</p>
   <h1><em>Ocean</em>AR</h1>
@@ -426,7 +425,6 @@
   <p><b>iOS Safari</b> &amp; <b>Android Chrome</b> supported<br>Place creatures in your real environment<br>Tap any creature to learn about it</p>
 </section>
 
-<!-- Select -->
 <section id="select" class="screen">
   <header>
     <p>Choose your encounter</p>
@@ -435,7 +433,6 @@
   <div class="cards" id="cards"></div>
 </section>
 
-<!-- Viewer -->
 <section id="viewer" class="screen">
   <nav class="vhead">
     <button id="backBtn" onclick="show('select')">← Back</button>
@@ -458,7 +455,6 @@
   </div>
 </section>
 
-<!-- Info Card -->
 <aside id="infoCard">
   <div class="info-wrap">
     <div class="info-bar"></div>
@@ -471,12 +467,29 @@
         <span class="info-emoji" id="iEmoji"></span>
       </div>
       <hr>
+      
       <dl class="info-grid">
         <dt>Habitat</dt>  <dd id="iHabitat"></dd>
         <dt>Diet</dt>     <dd id="iDiet"></dd>
         <dt>Depth</dt>    <dd id="iDepth"></dd>
         <dt>Status</dt>   <dd id="iStatus"></dd>
       </dl>
+
+      <div style="border-top: 1px dashed color-mix(in srgb, var(--teal) 20%, transparent); margin: 0.8rem 0; padding-top: 0.8rem;">
+        <p style="font-size: 0.44rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--teal); margin-bottom: 0.4rem;">📊 Real-time OBIS Tracking</p>
+        
+        <p id="obisLoading" style="font-size: 0.65rem; color: color-mix(in srgb, var(--foam) 50%, transparent); font-style: italic;">Fetching global ocean records...</p>
+        
+        <p id="obisError" style="font-size: 0.65rem; color: #ff6b6b; display: none;">Failed to sync with marine databases.</p>
+        
+        <dl class="info-grid" id="obisDl" style="display: none; margin-bottom: 0;">
+          <dt>Global Records</dt>   <dd id="obisCount">—</dd>
+          <dt>Last Sighted</dt>    <dd id="obisDate">—</dd>
+          <dt style="grid-column: span 2">Latest Location</dt>
+          <dd id="obisLocation" style="grid-column: span 2; font-size: 0.6rem; color: var(--glow);">—</dd>
+        </dl>
+      </div>
+
       <div class="fact">
         <p>✦ Did You Know</p>
         <p id="iFact"></p>
@@ -489,7 +502,6 @@
 <script>
   // ── Data ──
   // OBIS API — Ocean Biodiversity Information System
-  // Fetches real occurrence count + last sighting location for each species
   const OBIS_API = 'https://api.obis.org/v3';
 
   const CREATURES = [
@@ -515,7 +527,7 @@
       tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
       habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
       depth: '0–200 m', status: 'Least Concern',
-      fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
+      fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — an ability unique in the animal kingdom.'
     },
     {
       name: 'Pufferfish', sci: 'Tetraodontidae', emoji: '🐡', color: '#e8c84a',
@@ -570,7 +582,7 @@
     mv.src = c.model;
     mv.alt = c.name;
 
-    // Fill info card
+    // Fill static info card
     document.getElementById('iName').textContent    = c.name;
     document.getElementById('iSci').textContent     = c.sci;
     document.getElementById('iEmoji').textContent   = c.emoji;
@@ -579,12 +591,13 @@
     document.getElementById('iDepth').textContent   = c.depth;
     document.getElementById('iStatus').textContent  = c.status;
     document.getElementById('iFact').textContent    = c.fact;
+    
+    // Fire API fetch
     fetchOBIS(c.sciQuery);
   }
 
   // Fetch live data from OBIS API
   async function fetchOBIS(sciName) {
-    // Reset UI
     document.getElementById('obisLoading').style.display = 'block';
     document.getElementById('obisDl').style.display      = 'none';
     document.getElementById('obisError').style.display   = 'none';
@@ -609,7 +622,7 @@
           location = `${Math.abs(rec.decimalLatitude).toFixed(2)}°${rec.decimalLatitude >= 0 ? 'N' : 'S'}, ${Math.abs(rec.decimalLongitude).toFixed(2)}°${rec.decimalLongitude >= 0 ? 'E' : 'W'}`;
       }
 
-      // 4. Update UI
+      // 4. Update UI elements safely
       document.getElementById('obisCount').textContent    = total.toLocaleString() + ' records';
       document.getElementById('obisDate').textContent     = rec?.date_year ? `${rec.date_year}` : '—';
       document.getElementById('obisLocation').textContent = location;
@@ -623,21 +636,19 @@
     }
   }
 
-  // Auto-play animation when model loads
+  // Setup viewer actions when model loads
   mv.addEventListener('load', () => {
     const anim = mv.availableAnimations;
     if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
-    document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
-
-
+    document.getElementById('arBtn').style.display = 'block';
   });
 
-  // AR button
+  // AR button trigger
   document.getElementById('arBtn').addEventListener('click', () => mv.activateAR());
 
-  // Tap model in 3D preview → toggle info
+  // Tap model space to bring up card details
   mv.addEventListener('click', e => {
-    if (e.target.closest('#arBtn')) return;
+    if (e.target.closest('#arBtn') || e.target.closest('#backBtn')) return;
     ripple(e.clientX, e.clientY);
     infoOpen ? closeInfo() : openInfo();
   });
@@ -652,7 +663,7 @@
     infoOpen = false;
   }
 
-  // ── Ripple ──
+  // ── Ripple Effect ──
   function ripple(x, y) {
     const r = document.createElement('div');
     r.className = 'ripple';
