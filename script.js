@@ -79,10 +79,6 @@ let infoOpen = false;
 
 function openViewer(c) {
   show('viewer');
-  
-  // Clean up any old manual framing constraints from breaking visibility
-  mv.removeAttribute('scale');
-  
   mv.src = c.model;
   mv.alt = c.name;
 
@@ -139,21 +135,11 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Auto-play and frame configurations safely when model loads
+// Reverted: Auto-play animation when model loads (default config)
 mv.addEventListener('load', () => {
   const anim = mv.availableAnimations;
   if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
-
-  // Absolute Framing Fix: Forces the layout engine to safely evaluate bounds 
-  // without relying on manual metrics that trigger invisible renders
-  mv.minCameraOrbit = "auto auto auto";
-  mv.maxCameraOrbit = "auto auto auto";
-  mv.cameraOrbit = "0deg 75deg auto";
-  mv.fieldOfView = "auto";
-  
-  // Forces camera to update to the layout calculation immediately
-  mv.jumpCameraToGoal();
 });
 
 // AR button
