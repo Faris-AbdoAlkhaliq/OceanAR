@@ -10,6 +10,7 @@ const CREATURES = [
     tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
     habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
     depth: '1–15 m', status: 'Least Concern',
+    fov: '30deg', // Standard framing
     fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
   },
   {
@@ -18,6 +19,7 @@ const CREATURES = [
     tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
     habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
     depth: '0–600 m', status: 'Vulnerable',
+    fov: '65deg', // Widens the lens to make the huge shark look smaller and fit beautifully
     fact: 'Sharks detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away using special organs called the Ampullae of Lorenzini.'
   },
   {
@@ -26,6 +28,7 @@ const CREATURES = [
     tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
     habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
     depth: '0–200 m', status: 'Least Concern',
+    fov: '35deg', // Balanced viewing framing
     fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
   },
   {
@@ -34,6 +37,7 @@ const CREATURES = [
     tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
     habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
     depth: '1–100 m', status: 'Varies by Species',
+    fov: '12deg', // Tightens the lens to magnify the pufferfish, making it look much larger
     fact: 'Pufferfish contain tetrodotoxin — 1,200× more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by specially licensed chefs.'
   },
   {
@@ -42,9 +46,13 @@ const CREATURES = [
     tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
     habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
     depth: '0–30 m', status: 'Endangered',
+    fov: '50deg', // Widens the lens slightly to reduce the visual appearance size of the turtle
     fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — returning to the exact same beach where they were born to lay their eggs.'
   }
 ];
+
+// Context tracker for loading configurations
+let activeCreature = null;
 
 // ── Build Cards ──
 const cards = document.getElementById('cards');
@@ -80,11 +88,9 @@ let infoOpen = false;
 function openViewer(c) {
   show('viewer');
   
-  // Clear any persistent attribute states that might have been left over
-  mv.removeAttribute('scale');
-  mv.removeAttribute('camera-orbit');
-  mv.removeAttribute('field-of-view');
+  activeCreature = c;
   
+  // Set source paths securely
   mv.src = c.model;
   mv.alt = c.name;
 
@@ -141,11 +147,16 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Clean auto-play setup upon asset loading completion
+// Auto-play animation and apply target fieldOfView safely when model fully loads
 mv.addEventListener('load', () => {
   const anim = mv.availableAnimations;
   if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
+
+  // Apply custom visual zoom framing configurations cleanly without blocking 3D layouts
+  if (activeCreature && activeCreature.fov) {
+    mv.fieldOfView = activeCreature.fov;
+  }
 });
 
 // AR button
@@ -158,7 +169,7 @@ mv.addEventListener('click', e => {
   infoOpen ? closeInfo() : openInfo();
 });
 
-function openInfo() {
+function openInfo()  {
   document.getElementById('infoCard').classList.add('open');
   infoOpen = true;
 }
