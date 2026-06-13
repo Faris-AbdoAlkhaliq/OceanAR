@@ -79,6 +79,13 @@ let infoOpen = false;
 
 function openViewer(c) {
   show('viewer');
+  
+  // Reset any custom manual styling modifications to prevent models disappearing
+  mv.removeAttribute('scale'); 
+  
+  // Set up auto-framing parameters to cleanly scale the container viewing window instead
+  mv.setAttribute('zoom-sensitivity', '1');
+  
   mv.src = c.model;
   mv.alt = c.name;
 
@@ -135,11 +142,19 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Auto-play animation when model loads (Default configuration restored)
+// Auto-play and frame configuration when model loads
 mv.addEventListener('load', () => {
+  // 1. Play native animations seamlessly
   const anim = mv.availableAnimations;
   if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
+
+  // 2. Auto-Framing Setup
+  // This automatically resets camera fields to frame everything at equal proportions 
+  // without messing up the file scale or breaking AR placement values.
+  mv.cameraOrbit = "0deg 75deg auto";
+  mv.fieldOfView = "auto";
+  mv.jumpCameraToGoal();
 });
 
 // AR button
