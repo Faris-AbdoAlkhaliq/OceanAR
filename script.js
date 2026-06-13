@@ -135,26 +135,11 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Automatically normalize sizes on asset loading sequence
+// Auto-play animation when model loads (Default configuration restored)
 mv.addEventListener('load', () => {
-  // 1. Setup default animations
   const anim = mv.availableAnimations;
   if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
-
-  // 2. Global Uniform Sizing Calibration
-  // Reads native bounding dimensions of the mesh asset file directly
-  const dims = mv.getDimensions();
-  const maxNativeDim = Math.max(dims.x, dims.y, dims.z);
-  
-  if (maxNativeDim > 0) {
-    // Set 1.0 as the standardized bounding dimension limit for every object
-    const targetUniformSize = 1.0; 
-    const computedFactor = targetUniformSize / maxNativeDim;
-    
-    // Updates the HTML element scale properties smoothly on the fly
-    mv.scale = `${computedFactor} ${computedFactor} ${computedFactor}`;
-  }
 });
 
 // AR button
@@ -173,7 +158,6 @@ function openInfo()  {
 }
 
 function closeInfo() {
-  document.getElementById('infoCard').classList.remove('remove');
   document.getElementById('infoCard').classList.remove('open');
   infoOpen = false;
 }
