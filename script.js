@@ -10,7 +10,6 @@ const CREATURES = [
     tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
     habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
     depth: '1–15 m', status: 'Least Concern',
-    scale: '1 1 1', // Naturally good size
     fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
   },
   {
@@ -19,7 +18,6 @@ const CREATURES = [
     tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
     habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
     depth: '0–600 m', status: 'Vulnerable',
-    scale: '0.15 0.15 0.15', // Shrunk down so it doesn't break the AR room
     fact: 'Sharks detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away using special organs called the Ampullae of Lorenzini.'
   },
   {
@@ -28,7 +26,6 @@ const CREATURES = [
     tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
     habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
     depth: '0–200 m', status: 'Least Concern',
-    scale: '1 1 1', // Naturally good size
     fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
   },
   {
@@ -37,7 +34,6 @@ const CREATURES = [
     tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
     habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
     depth: '1–100 m', status: 'Varies by Species',
-    scale: '3.5 3.5 3.5', // Blown up so you can actually see it in AR
     fact: 'Pufferfish contain tetrodotoxin — 1,200× more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by specially licensed chefs.'
   },
   {
@@ -46,7 +42,6 @@ const CREATURES = [
     tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
     habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
     depth: '0–30 m', status: 'Endangered',
-    scale: '0.4 0.4 0.4', // Shrunk down to match the others
     fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — returning to the exact same beach where they were born to lay their eggs.'
   }
 ];
@@ -139,16 +134,27 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Auto-play and inject specific scale
+// Automatically play animation and scale models dynamically on load
 mv.addEventListener('load', () => {
+  // 1. Manage animations
   const anim = mv.availableAnimations;
-  if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
+  if (anim?.length) { 
+    mv.animationName = anim[0]; 
+    mv.play(); 
+  }
+  
+  // 2. Toggle AR button availability
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
 
-  if (activeCreature && activeCreature.scale) {
-    mv.scale = activeCreature.scale;
-  } else {
-    mv.removeAttribute('scale');
+  // 3. 🚀 DYNAMIC AUTO-SCALER (Replaces manual scale properties)
+  const dim = mv.getDimensions(); // Returns {x, y, z} dimensions in real-world meters
+  const maxDim = Math.max(dim.x, dim.y, dim.z);
+  const targetSize = 0.5; // Target size in meters (50cm is the sweet spot for tables/floors)
+
+  if (maxDim > 0) {
+    const scaleFactor = targetSize / maxDim;
+    mv.scale = `${scaleFactor} ${scaleFactor} ${scaleFactor}`;
+    console.log(`[AutoScaler] Normalized ${mv.alt}: Raw Max Dim was ${maxDim.toFixed(2)}m -> Applied Scale Factor: ${scaleFactor.toFixed(4)}`);
   }
 });
 
