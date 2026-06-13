@@ -10,8 +10,6 @@ const CREATURES = [
     tags: ['Coral Reef', 'Symbiotic', 'Indo-Pacific'],
     habitat: 'Coral Reefs, Indo-Pacific', diet: 'Algae, Plankton',
     depth: '1–15 m', status: 'Least Concern',
-    // Custom camera distance to frame the model perfectly
-    orbitRadius: '1.5m',
     fact: 'All clownfish are born male. When the dominant female dies, the largest male changes sex to become the new female — permanently.'
   },
   {
@@ -20,8 +18,6 @@ const CREATURES = [
     tags: ['Apex Predator', 'Open Ocean', '450M Years Old'],
     habitat: 'Open Ocean & Coastal Waters', diet: 'Fish, Rays, Mammals',
     depth: '0–600 m', status: 'Vulnerable',
-    // Shifts the camera back significantly so the huge shark is completely visible
-    orbitRadius: '6m',
     fact: 'Sharks detect the faint electrical field of a hidden prey\'s heartbeat up to 1 metre away using special organs called the Ampullae of Lorenzini.'
   },
   {
@@ -30,8 +26,6 @@ const CREATURES = [
     tags: ['Highly Intelligent', 'Shape-Shifter', 'Coral Reef'],
     habitat: 'Coral Reefs & Rocky Seabeds', diet: 'Crabs, Shrimp, Fish',
     depth: '0–200 m', status: 'Least Concern',
-    // Tailored zoom to capture the entire octopus structure cleanly
-    orbitRadius: '2.5m',
     fact: 'Octopuses have three hearts, blue blood, and can edit their own RNA to adapt to cold temperatures — a ability unique in the animal kingdom.'
   },
   {
@@ -40,8 +34,6 @@ const CREATURES = [
     tags: ['Toxic', 'Self-Defense', 'Tropical Seas'],
     habitat: 'Tropical & Subtropical Seas', diet: 'Algae, Shellfish',
     depth: '1–100 m', status: 'Varies by Species',
-    // Zooms closer into the pufferfish box so it looks great alongside others
-    orbitRadius: '1.2m',
     fact: 'Pufferfish contain tetrodotoxin — 1,200× more toxic than cyanide. Yet they are a delicacy in Japan, prepared only by specially licensed chefs.'
   },
   {
@@ -50,14 +42,9 @@ const CREATURES = [
     tags: ['Ancient Reptile', 'Endangered', 'Long-Distance'],
     habitat: 'Tropical & Subtropical Oceans', diet: 'Seagrass, Jellyfish',
     depth: '0–30 m', status: 'Endangered',
-    // Balanced visual framing for the low-poly turtle
-    orbitRadius: '2.2m',
     fact: 'Sea turtles navigate thousands of kilometres using Earth\'s magnetic field — returning to the exact same beach where they were born to lay their eggs.'
   }
 ];
-
-// Keep track of the currently active creature config
-let activeCreature = null;
 
 // ── Build Cards ──
 const cards = document.getElementById('cards');
@@ -93,8 +80,8 @@ let infoOpen = false;
 function openViewer(c) {
   show('viewer');
   
-  activeCreature = c; // Store active reference to fetch its custom radius later
-  mv.removeAttribute('scale'); // Ensure no forced hard-scaling breaks visibility
+  // Clean up any old manual framing constraints from breaking visibility
+  mv.removeAttribute('scale');
   
   mv.src = c.model;
   mv.alt = c.name;
@@ -152,18 +139,21 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Auto-play and handle frame adjustments cleanly when model fully loads
+// Auto-play and frame configurations safely when model loads
 mv.addEventListener('load', () => {
   const anim = mv.availableAnimations;
   if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
 
-  // Apply explicit customized camera framing distance values
-  if (activeCreature && activeCreature.orbitRadius) {
-    mv.cameraOrbit = `0deg 75deg ${activeCreature.orbitRadius}`;
-    mv.fieldOfView = "auto";
-    mv.jumpCameraToGoal();
-  }
+  // Absolute Framing Fix: Forces the layout engine to safely evaluate bounds 
+  // without relying on manual metrics that trigger invisible renders
+  mv.minCameraOrbit = "auto auto auto";
+  mv.maxCameraOrbit = "auto auto auto";
+  mv.cameraOrbit = "0deg 75deg auto";
+  mv.fieldOfView = "auto";
+  
+  // Forces camera to update to the layout calculation immediately
+  mv.jumpCameraToGoal();
 });
 
 // AR button
