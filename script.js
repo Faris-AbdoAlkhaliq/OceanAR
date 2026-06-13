@@ -46,9 +46,6 @@ const CREATURES = [
   }
 ];
 
-// Active tracker context
-let activeCreature = null;
-
 // ── Build Cards ──
 const cards = document.getElementById('cards');
 CREATURES.forEach(c => {
@@ -74,7 +71,7 @@ function show(id) {
   screens.forEach(s => s.classList.toggle('active', s.id === id));
   closeInfo();
 }
-window.show = show;
+window.show = show; // Expose globally for HTML elements
 
 // ── Viewer ──
 const mv = document.getElementById('mv');
@@ -82,11 +79,10 @@ let infoOpen = false;
 
 function openViewer(c) {
   show('viewer');
-  
-  activeCreature = c;
   mv.src = c.model;
   mv.alt = c.name;
 
+  // Fill info card
   document.getElementById('iName').textContent    = c.name;
   document.getElementById('iSci').textContent     = c.sci;
   document.getElementById('iEmoji').textContent   = c.emoji;
@@ -100,19 +96,23 @@ function openViewer(c) {
 
 // Fetch live data from OBIS API
 async function fetchOBIS(sciName) {
+  // Reset UI
   document.getElementById('obisLoading').style.display = 'block';
   document.getElementById('obisDl').style.display      = 'none';
   document.getElementById('obisError').style.display   = 'none';
 
   try {
+    // 1. Get total occurrence count
     const statsRes = await fetch(`${OBIS_API}/occurrence?scientificname=${encodeURIComponent(sciName)}&size=0`);
     const statsData = await statsRes.json();
     const total = statsData.total ?? 0;
 
+    // 2. Get most recent occurrence
     const recentRes = await fetch(`${OBIS_API}/occurrence?scientificname=${encodeURIComponent(sciName)}&size=1&fields=date_year,decimalLatitude,decimalLongitude,locality,waterBody`);
     const recentData = await recentRes.json();
     const rec = recentData.results?.[0];
 
+    // 3. Build location string
     let location = '—';
     if (rec) {
       if (rec.locality)   location = rec.locality;
@@ -121,6 +121,7 @@ async function fetchOBIS(sciName) {
         location = `${Math.abs(rec.decimalLatitude).toFixed(2)}°${rec.decimalLatitude >= 0 ? 'N' : 'S'}, ${Math.abs(rec.decimalLongitude).toFixed(2)}°${rec.decimalLongitude >= 0 ? 'E' : 'W'}`;
     }
 
+    // 4. Update UI
     document.getElementById('obisCount').textContent    = total.toLocaleString() + ' records';
     document.getElementById('obisDate').textContent     = rec?.date_year ? `${rec.date_year}` : '—';
     document.getElementById('obisLocation').textContent = location;
@@ -134,44 +135,35 @@ async function fetchOBIS(sciName) {
   }
 }
 
-// Automatically play animation and scale models dynamically on load
+// Reverted: Auto-play animation when model loads (default config)
 mv.addEventListener('load', () => {
-  // 1. Manage animations
   const anim = mv.availableAnimations;
-  if (anim?.length) { 
-    mv.animationName = anim[0]; 
-    mv.play(); 
-  }
-  
-  // 2. Toggle AR button availability
+  if (anim?.length) { mv.animationName = anim[0]; mv.play(); }
   document.getElementById('arBtn').style.display = mv.canActivateAR ? 'block' : 'none';
-
-  // 3. 🚀 DYNAMIC AUTO-SCALER (Replaces manual scale properties)
-  const dim = mv.getDimensions(); // Returns {x, y, z} dimensions in real-world meters
-  const maxDim = Math.max(dim.x, dim.y, dim.z);
-  const targetSize = 0.5; // Target size in meters (50cm is the sweet spot for tables/floors)
-
-  if (maxDim > 0) {
-    const scaleFactor = targetSize / maxDim;
-    mv.scale = `${scaleFactor} ${scaleFactor} ${scaleFactor}`;
-    console.log(`[AutoScaler] Normalized ${mv.alt}: Raw Max Dim was ${maxDim.toFixed(2)}m -> Applied Scale Factor: ${scaleFactor.toFixed(4)}`);
-  }
 });
 
 // AR button
 document.getElementById('arBtn').addEventListener('click', () => mv.activateAR());
 
-// Tap model → toggle info
+// Tap model in 3D preview → toggle info
 mv.addEventListener('click', e => {
   if (e.target.closest('#arBtn')) return;
   ripple(e.clientX, e.clientY);
   infoOpen ? closeInfo() : openInfo();
 });
 
-function openInfo()  { document.getElementById('infoCard').classList.add('open'); infoOpen = true; }
-function closeInfo() { document.getElementById('infoCard').classList.remove('open'); infoOpen = false; }
-window.closeInfo = closeInfo;
+function openInfo()  {
+  document.getElementById('infoCard').classList.add('open');
+  infoOpen = true;
+}
 
+function closeInfo() {
+  document.getElementById('infoCard').classList.remove('open');
+  infoOpen = false;
+}
+window.closeInfo = closeInfo; // Expose globally for HTML dismiss buttons
+
+// ── Ripple ──
 function ripple(x, y) {
   const r = document.createElement('div');
   r.className = 'ripple';
